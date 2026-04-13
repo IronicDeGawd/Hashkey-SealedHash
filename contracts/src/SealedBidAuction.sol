@@ -173,7 +173,13 @@ contract SealedBidAuction {
         bytes32[] memory publicInputs = new bytes32[](2);
         publicInputs[0] = bytes32(a.reserve);
         publicInputs[1] = bytes32(escrow);
-        if (!verifier.verify(proof, publicInputs)) revert InvalidProof();
+        // The generated Honk verifier reverts on rejection instead of returning
+        // false, so wrap the call and surface a single canonical error.
+        try verifier.verify(proof, publicInputs) returns (bool verified) {
+            if (!verified) revert InvalidProof();
+        } catch {
+            revert InvalidProof();
+        }
 
         commitments[id][msg.sender] =
             Commitment({escrow: escrow, commitment: commitment, revealed: false, refunded: false});
@@ -253,8 +259,8 @@ contract SealedBidAuction {
 
         Commitment storage c = commitments[id][msg.sender];
         if (c.commitment == bytes32(0)) revert NoCommitment();
-        if (c.refunded) revert AlreadyRefunded();
         if (msg.sender == a.highestBidder) revert NoRefund();
+        if (c.refunded) revert AlreadyRefunded();
 
         c.refunded = true;
         uint256 amount = c.escrow;
