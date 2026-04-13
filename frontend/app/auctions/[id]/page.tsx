@@ -168,7 +168,10 @@ export default function AuctionDetailPage() {
               />
             )}
             {address && data.status === AuctionStatus.REVEAL && (
-              <p>reveal phase - reveal ui lands in phase e.</p>
+              <p>
+                reveal phase is open. open{" "}
+                <Link href={`/auctions/${idStr}/mybid`}>your bid page</Link> to reveal.
+              </p>
             )}
             {address && data.status === AuctionStatus.SETTLEMENT && (
               <p>settlement phase - settle button lands in phase f.</p>
