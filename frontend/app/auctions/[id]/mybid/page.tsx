@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useWallet } from "@/lib/wallet-context";
 import { WalletButton } from "@/components/WalletButton";
 import { RevealForm } from "@/components/RevealForm";
+import { RefundButton } from "@/components/RefundButton";
 import {
   AuctionStatus,
   readAuction,
@@ -119,7 +120,29 @@ export default function MyBidPage() {
             )}
 
           {data.status === AuctionStatus.FINALIZED && (
-            <p style={{ marginTop: 16 }}>auction finalized. refund ui lands in phase f.</p>
+            <section style={{ marginTop: 24 }}>
+              {address &&
+              address.toLowerCase() === data.auction.highestBidder.toLowerCase() ? (
+                <p>
+                  you won this auction. your escrow surplus was returned atomically in settle();
+                  no refund call needed.
+                </p>
+              ) : data.commitment.commitment === ZERO_COMMITMENT ? (
+                <p>auction finalized. you did not bid.</p>
+              ) : data.commitment.refunded ? (
+                <p>escrow already refunded.</p>
+              ) : (
+                <RefundButton
+                  auctionId={BigInt(idStr!)}
+                  reason={
+                    data.commitment.revealed
+                      ? "you revealed but did not win - pull your escrow back."
+                      : "you did not reveal in time - pull your escrow back."
+                  }
+                  onRefunded={refresh}
+                />
+              )}
+            </section>
           )}
         </>
       )}

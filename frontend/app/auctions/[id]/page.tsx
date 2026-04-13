@@ -18,6 +18,7 @@ import { useWallet } from "@/lib/wallet-context";
 import { formatTokenAmount, formatUnixSeconds, countdown, shortAddress } from "@/lib/format";
 import { WalletButton } from "@/components/WalletButton";
 import { CommitForm } from "@/components/CommitForm";
+import { SettleButton } from "@/components/SettleButton";
 
 type DetailData = {
   auction: Auction;
@@ -34,6 +35,7 @@ export default function AuctionDetailPage() {
   const [data, setData] = useState<DetailData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [, forceRerender] = useState(0);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const idStr = params?.id;
 
@@ -66,12 +68,14 @@ export default function AuctionDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [idStr, address]);
+  }, [idStr, address, reloadKey]);
 
   useEffect(() => {
     const id = setInterval(() => forceRerender((n) => n + 1), 1000);
     return () => clearInterval(id);
   }, []);
+
+  const refresh = () => setReloadKey((n) => n + 1);
 
   return (
     <main style={{ fontFamily: "monospace", padding: 24, maxWidth: 960 }}>
@@ -173,8 +177,8 @@ export default function AuctionDetailPage() {
                 <Link href={`/auctions/${idStr}/mybid`}>your bid page</Link> to reveal.
               </p>
             )}
-            {address && data.status === AuctionStatus.SETTLEMENT && (
-              <p>settlement phase - settle button lands in phase f.</p>
+            {data.status === AuctionStatus.SETTLEMENT && (
+              <SettleButton auctionId={data.auction.id} onSettled={refresh} />
             )}
             {data.status === AuctionStatus.FINALIZED && (
               <p>auction finalized. winner: {shortAddress(data.auction.highestBidder)}</p>
