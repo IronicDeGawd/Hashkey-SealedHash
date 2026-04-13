@@ -158,8 +158,20 @@ contract SealedBidAuction {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Commit to a bid. The proof is a Noir/UltraHonk ZK proof that
-    ///         `reserve <= bid <= escrow`. The commitment is keccak256(bid, nonce)
-    ///         and is verified against the plaintext bid at reveal time.
+    ///         `reserve <= bid <= escrow` for some private `bid`.
+    /// @dev    Public inputs bound into the proof are `[reserve, escrow]` only.
+    ///         The proof does NOT bind to `commitment`, `msg.sender`, or this
+    ///         auction `id` — it is a portable attestation of "some bid in
+    ///         range." Bidder-to-bid binding is enforced at reveal time via the
+    ///         keccak256 commitment preimage check plus the on-chain range
+    ///         re-assert (see `revealBid`). The ZK layer's narrow but real job
+    ///         is commit-phase public verifiability of solvency: observers can
+    ///         see that every committed bid is in range before any plaintext
+    ///         is ever published.
+    /// @param  id          auction identifier
+    /// @param  escrow      payment-token amount locked, becomes a public input
+    /// @param  commitment  keccak256(abi.encode(bid, nonce))
+    /// @param  proof       UltraHonk proof bytes for the range circuit
     function commitBid(uint256 id, uint256 escrow, bytes32 commitment, bytes calldata proof) external {
         Auction storage a = auctions[id];
         if (a.seller == address(0)) revert InvalidState();
@@ -190,8 +202,18 @@ contract SealedBidAuction {
     }
 
     /// @notice Reveal a previously committed bid. `nonce` must match what was
-    ///         hashed into the commitment. Also re-asserts the range check
-    ///         on-chain as defense-in-depth against a broken verifier.
+    ///         hashed into the commitment.
+    /// @dev    The on-chain range recheck on line below is load-bearing, not
+    ///         decorative: the ZK circuit's public inputs are (reserve, escrow)
+    ///         only — neither the bidder address nor the commitment hash are
+    ///         bound into the proof. A malicious bidder could reuse any valid
+    ///         proof from another committer with the same (reserve, escrow).
+    ///         The keccak256 commitment binds (bid, nonce) to this bidder, and
+    ///         this re-assert closes the proof-reuse gap by re-enforcing the
+    ///         range against the revealed plaintext. Do not remove.
+    /// @param  id     auction identifier
+    /// @param  bid    plaintext bid, must match the committed preimage
+    /// @param  nonce  commitment randomness, must match the committed preimage
     function revealBid(uint256 id, uint256 bid, uint256 nonce) external {
         Auction storage a = auctions[id];
         if (block.timestamp < a.commitDeadline || block.timestamp >= a.revealDeadline) {
@@ -202,6 +224,7 @@ contract SealedBidAuction {
         if (c.commitment == bytes32(0)) revert NoCommitment();
         if (c.revealed) revert AlreadyRevealed();
         if (keccak256(abi.encode(bid, nonce)) != c.commitment) revert BadReveal();
+        // Load-bearing: closes the proof-reuse gap, see function-level @dev above.
         if (bid < a.reserve || bid > c.escrow) revert BidOutOfRange();
 
         c.revealed = true;
