@@ -17,6 +17,7 @@ import { readIsHuman, type KycInfo } from "@/lib/kyc";
 import { useWallet } from "@/lib/wallet-context";
 import { formatTokenAmount, formatUnixSeconds, countdown, shortAddress } from "@/lib/format";
 import { WalletButton } from "@/components/WalletButton";
+import { CommitForm } from "@/components/CommitForm";
 
 type DetailData = {
   auction: Auction;
@@ -156,11 +157,25 @@ export default function AuctionDetailPage() {
           </section>
 
           <section style={{ marginTop: 24 }}>
-            <h2>actions (phase d-f)</h2>
-            <p>
-              commit / reveal / settle / refund buttons land in phase d-f. this page is currently
-              read-only so the design team can restyle the summary and your-position panels first.
-            </p>
+            <h2>actions</h2>
+            {!address && <p>connect a wallet to bid.</p>}
+            {address && data.status === AuctionStatus.COMMIT && (
+              <CommitForm
+                auctionId={data.auction.id}
+                reserve={data.auction.reserve}
+                paymentToken={data.auction.paymentToken}
+                paymentDecimals={data.payment.decimals}
+              />
+            )}
+            {address && data.status === AuctionStatus.REVEAL && (
+              <p>reveal phase - reveal ui lands in phase e.</p>
+            )}
+            {address && data.status === AuctionStatus.SETTLEMENT && (
+              <p>settlement phase - settle button lands in phase f.</p>
+            )}
+            {data.status === AuctionStatus.FINALIZED && (
+              <p>auction finalized. winner: {shortAddress(data.auction.highestBidder)}</p>
+            )}
           </section>
         </>
       )}

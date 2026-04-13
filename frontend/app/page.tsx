@@ -1,84 +1,50 @@
 "use client";
 
-import { useState } from "react";
-import { generateAuctionProof } from "@/lib/prove";
-import { WalletButton } from "@/components/WalletButton";
+import Link from "next/link";
 import { useWallet } from "@/lib/wallet-context";
+import { WalletButton } from "@/components/WalletButton";
+import { addresses } from "@/lib/addresses";
+import { shortAddress } from "@/lib/format";
 
 export default function Home() {
   const { address, chainId, isRightChain } = useWallet();
-  const [bid, setBid] = useState("5000");
-  const [reserve, setReserve] = useState("1000");
-  const [escrow, setEscrow] = useState("10000");
-  const [status, setStatus] = useState("idle");
-  const [output, setOutput] = useState<string>("");
-
-  async function onRun() {
-    setStatus("proving");
-    setOutput("");
-    const t0 = performance.now();
-    try {
-      const result = await generateAuctionProof({
-        bid: BigInt(bid),
-        reserve: BigInt(reserve),
-        escrow: BigInt(escrow),
-      });
-      const t1 = performance.now();
-      setOutput(
-        JSON.stringify(
-          {
-            elapsedMs: Math.round(t1 - t0),
-            proofBytes: result.proof.length,
-            publicInputs: result.publicInputs,
-            witnessLength: result.witnessLength,
-            proofHex: "0x" + Array.from(result.proof.slice(0, 32)).map((b) => b.toString(16).padStart(2, "0")).join("") + "...",
-          },
-          null,
-          2,
-        ),
-      );
-      setStatus("ok");
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setOutput(message);
-      setStatus("error");
-    }
-  }
 
   return (
     <main style={{ fontFamily: "monospace", padding: 24, maxWidth: 720 }}>
-      <h1>Sealed-bid auction - proof smoke-test</h1>
+      <h1>Sealed-Bid Auction</h1>
+      <p>Private RWA auctions on HashKey Chain, secured by a Noir range-proof circuit.</p>
+
       <section style={{ marginBottom: 16 }}>
         <WalletButton />
         <div>
-          address: {address ?? "(not connected)"} | chainId: {chainId ?? "?"} | rightChain: {String(isRightChain)}
+          {address ? `connected: ${shortAddress(address)}` : "not connected"} · chainId {chainId ?? "?"} · right chain {String(isRightChain)}
         </div>
       </section>
-      <p>
-        Runs the Noir range-proof circuit in the browser via @aztec/bb.js + @noir-lang/noir_js.
-        Circuit: <code>reserve &lt;= bid &lt;= escrow</code>. Bid is private; reserve and escrow are public.
-      </p>
-      <div style={{ display: "grid", gap: 8, marginTop: 16 }}>
-        <label>
-          bid (private):{" "}
-          <input value={bid} onChange={(e) => setBid(e.target.value)} style={{ width: 120 }} />
-        </label>
-        <label>
-          reserve (public):{" "}
-          <input value={reserve} onChange={(e) => setReserve(e.target.value)} style={{ width: 120 }} />
-        </label>
-        <label>
-          escrow (public):{" "}
-          <input value={escrow} onChange={(e) => setEscrow(e.target.value)} style={{ width: 120 }} />
-        </label>
-        <button onClick={onRun} disabled={status === "proving"} style={{ width: 160, marginTop: 8 }}>
-          {status === "proving" ? "proving..." : "generate proof"}
-        </button>
-      </div>
-      <p>status: {status}</p>
-      <pre style={{ background: "#f0f0f0", padding: 12, overflowX: "auto", whiteSpace: "pre-wrap" }}>
-        {output}
-      </pre>
+
+      <nav>
+        <ul>
+          <li>
+            <Link href="/auctions">browse auctions</Link>
+          </li>
+          <li>
+            <Link href="/create">create an auction</Link>
+          </li>
+          <li>
+            <Link href="/dev">dev tools (mint, self-kyc, zk smoke-test)</Link>
+          </li>
+        </ul>
+      </nav>
+
+      <section style={{ marginTop: 24 }}>
+        <h2>deployed contracts (hashkey testnet)</h2>
+        <pre>
+          {`Verifier         ${addresses.verifier}
+KycSBT           ${addresses.kycSbt}
+Auction          ${addresses.auction}
+mRWA             ${addresses.mockRwa}
+mUSDT            ${addresses.mockUsdt}`}
+        </pre>
+      </section>
     </main>
   );
 }

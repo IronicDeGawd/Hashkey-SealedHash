@@ -1,5 +1,5 @@
-import type { Abi, Address } from "viem";
-import { publicClient } from "./chain";
+import type { Abi, Address, Hex } from "viem";
+import { publicClient, getWalletClient } from "./chain";
 import { erc20Abi } from "./abis";
 
 const ABI = erc20Abi as Abi;
@@ -40,4 +40,35 @@ export async function readAllowance(
     functionName: "allowance",
     args: [owner, spender],
   })) as bigint;
+}
+
+// ---- writes --------------------------------------------------------------
+
+export async function approve(token: Address, spender: Address, amount: bigint): Promise<Hex> {
+  const wallet = await getWalletClient();
+  const { request } = await publicClient.simulateContract({
+    account: wallet.account!,
+    address: token,
+    abi: ABI,
+    functionName: "approve",
+    args: [spender, amount],
+  });
+  const hash = await wallet.writeContract(request);
+  await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
+}
+
+/// Only valid against MockERC20 (public mint). Real ERC20s will revert.
+export async function mint(token: Address, to: Address, amount: bigint): Promise<Hex> {
+  const wallet = await getWalletClient();
+  const { request } = await publicClient.simulateContract({
+    account: wallet.account!,
+    address: token,
+    abi: ABI,
+    functionName: "mint",
+    args: [to, amount],
+  });
+  const hash = await wallet.writeContract(request);
+  await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
 }

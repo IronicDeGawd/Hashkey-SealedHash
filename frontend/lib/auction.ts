@@ -1,5 +1,5 @@
-import type { Abi, Address } from "viem";
-import { publicClient } from "./chain";
+import type { Abi, Address, Hex } from "viem";
+import { publicClient, getWalletClient } from "./chain";
 import { addresses } from "./addresses";
 import { auctionAbi } from "./abis";
 
@@ -122,4 +122,105 @@ export function statusLabel(s: AuctionStatus): string {
     default:
       return "unknown";
   }
+}
+
+// ---- writes --------------------------------------------------------------
+
+/// Submit a sealed commit. The proof is the UltraHonk proof bytes from
+/// generateAuctionProof; the commitment is keccak256(abi.encode(bid, nonce)).
+/// Caller must have already approved `escrow` of the payment token for the
+/// auction contract.
+export async function commitBid(
+  id: bigint,
+  escrow: bigint,
+  commitment: Hex,
+  proof: Uint8Array,
+): Promise<Hex> {
+  const wallet = await getWalletClient();
+  const proofHex = `0x${Array.from(proof)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")}` as Hex;
+  const { request } = await publicClient.simulateContract({
+    account: wallet.account!,
+    address: addresses.auction,
+    abi: auctionAbi as Abi,
+    functionName: "commitBid",
+    args: [id, escrow, commitment, proofHex],
+  });
+  const hash = await wallet.writeContract(request);
+  await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
+}
+
+export async function revealBid(id: bigint, bid: bigint, nonce: bigint): Promise<Hex> {
+  const wallet = await getWalletClient();
+  const { request } = await publicClient.simulateContract({
+    account: wallet.account!,
+    address: addresses.auction,
+    abi: auctionAbi as Abi,
+    functionName: "revealBid",
+    args: [id, bid, nonce],
+  });
+  const hash = await wallet.writeContract(request);
+  await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
+}
+
+export async function settle(id: bigint): Promise<Hex> {
+  const wallet = await getWalletClient();
+  const { request } = await publicClient.simulateContract({
+    account: wallet.account!,
+    address: addresses.auction,
+    abi: auctionAbi as Abi,
+    functionName: "settle",
+    args: [id],
+  });
+  const hash = await wallet.writeContract(request);
+  await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
+}
+
+export async function refund(id: bigint): Promise<Hex> {
+  const wallet = await getWalletClient();
+  const { request } = await publicClient.simulateContract({
+    account: wallet.account!,
+    address: addresses.auction,
+    abi: auctionAbi as Abi,
+    functionName: "refund",
+    args: [id],
+  });
+  const hash = await wallet.writeContract(request);
+  await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
+}
+
+/// Seller flow. Assumes the asset token was already approved for the auction.
+export type CreateAuctionArgs = {
+  asset: Address;
+  assetAmount: bigint;
+  paymentToken: Address;
+  reserve: bigint;
+  commitDuration: bigint;
+  revealDuration: bigint;
+};
+
+export async function createAuction(args: CreateAuctionArgs): Promise<Hex> {
+  const wallet = await getWalletClient();
+  const { request } = await publicClient.simulateContract({
+    account: wallet.account!,
+    address: addresses.auction,
+    abi: auctionAbi as Abi,
+    functionName: "createAuction",
+    args: [
+      args.asset,
+      args.assetAmount,
+      args.paymentToken,
+      args.reserve,
+      args.commitDuration,
+      args.revealDuration,
+    ],
+  });
+  const hash = await wallet.writeContract(request);
+  await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
 }
