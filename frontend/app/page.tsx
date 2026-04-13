@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { generateAuctionProof } from "@/lib/prove";
+import { WalletButton } from "@/components/WalletButton";
+import { useWallet } from "@/lib/wallet-context";
 
 export default function Home() {
+  const { address, chainId, isRightChain } = useWallet();
   const [bid, setBid] = useState("5000");
   const [reserve, setReserve] = useState("1000");
   const [escrow, setEscrow] = useState("10000");
@@ -45,6 +48,12 @@ export default function Home() {
   return (
     <main style={{ fontFamily: "monospace", padding: 24, maxWidth: 720 }}>
       <h1>Sealed-bid auction - proof smoke-test</h1>
+      <section style={{ marginBottom: 16 }}>
+        <WalletButton />
+        <div>
+          address: {address ?? "(not connected)"} | chainId: {chainId ?? "?"} | rightChain: {String(isRightChain)}
+        </div>
+      </section>
       <p>
         Runs the Noir range-proof circuit in the browser via @aztec/bb.js + @noir-lang/noir_js.
         Circuit: <code>reserve &lt;= bid &lt;= escrow</code>. Bid is private; reserve and escrow are public.
