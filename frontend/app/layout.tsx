@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { WalletProvider } from "@/lib/wallet-context";
+import { TestSignerBanner } from "@/components/TestSignerBanner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,7 +16,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <WalletProvider>{children}</WalletProvider>
+        <WalletProvider>
+          <TestSignerBanner />
+          {children}
+        </WalletProvider>
       </body>
     </html>
   );

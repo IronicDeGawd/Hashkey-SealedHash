@@ -10,7 +10,13 @@ import {
   type ReactNode,
 } from "react";
 import type { Address } from "viem";
-import { hashkeyTestnet, readCurrentAccount, requestAccount, hasInjectedWallet } from "./chain";
+import {
+  hashkeyTestnet,
+  readCurrentAccount,
+  requestAccount,
+  hasInjectedWallet,
+  isTestSignerEnabled,
+} from "./chain";
 
 type EthereumProvider = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
@@ -27,6 +33,7 @@ type WalletState = {
   disconnect: () => void;
   isRightChain: boolean;
   hasWallet: boolean;
+  isTestSigner: boolean;
 };
 
 const WalletContext = createContext<WalletState | null>(null);
@@ -49,17 +56,23 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<WalletState["status"]>("idle");
   const [error, setError] = useState<string | null>(null);
   const [hasWallet, setHasWallet] = useState(false);
+  const [isTestSigner, setIsTestSigner] = useState(false);
 
   // On mount: detect wallet, passively read account + chain if already authorized.
+  // If test signer is enabled (dev-only env flag, no injected wallet), wire it
+  // into the same state slots so the rest of the app is agnostic.
   useEffect(() => {
     let cancelled = false;
     const init = async () => {
-      const present = hasInjectedWallet();
+      const testMode = isTestSignerEnabled();
+      if (!cancelled) setIsTestSigner(testMode);
+      const present = testMode || hasInjectedWallet();
       if (!cancelled) setHasWallet(present);
       if (!present) return;
       try {
-        const existing = await readCurrentAccount();
-        const chain = await readChainId();
+        // Test signer: auto-connect because there's no UI to click.
+        const existing = testMode ? await requestAccount() : await readCurrentAccount();
+        const chain = testMode ? hashkeyTestnet.id : await readChainId();
         if (cancelled) return;
         if (existing) {
           setAddress(existing);
@@ -133,8 +146,18 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const isRightChain = chainId === hashkeyTestnet.id;
 
   const value = useMemo<WalletState>(
-    () => ({ address, chainId, status, error, connect, disconnect, isRightChain, hasWallet }),
-    [address, chainId, status, error, connect, disconnect, isRightChain, hasWallet],
+    () => ({
+      address,
+      chainId,
+      status,
+      error,
+      connect,
+      disconnect,
+      isRightChain,
+      hasWallet,
+      isTestSigner,
+    }),
+    [address, chainId, status, error, connect, disconnect, isRightChain, hasWallet, isTestSigner],
   );
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
