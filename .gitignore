@@ -3,6 +3,7 @@ spike/
 .claude/
 CLAUDE.md
 **/CLAUDE.md
+.playwright-mcp/
 node_modules/
 .env
 .env.local
