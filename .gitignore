@@ -5,6 +5,7 @@ CLAUDE.md
 **/CLAUDE.md
 .playwright-mcp/
 node_modules/
+scripts/build-design-brief.py
 .env
 .env.local
 .env.*.local

@@ -25,11 +25,13 @@ contract SeedDemoAuctionScript is Script {
 
         // Demo parameters. Reserve matches the spike's proof fixture so the
         // committed proof fixture generated for reserve=1000 escrow=10000 can
-        // still be replayed against this auction.
+        // still be replayed against this auction. Durations can be overridden
+        // from env - default is 1h/1h but a long run (e.g. 6h/6h) is useful
+        // when walking through the full flow manually.
         uint256 assetAmount = 1 ether;
         uint256 reserve = 1000;
-        uint64 commitDuration = 1 hours;
-        uint64 revealDuration = 1 hours;
+        uint64 commitDuration = uint64(vm.envOr("COMMIT_DURATION_SECONDS", uint256(1 hours)));
+        uint64 revealDuration = uint64(vm.envOr("REVEAL_DURATION_SECONDS", uint256(1 hours)));
 
         vm.startBroadcast(deployerKey);
 
