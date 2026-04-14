@@ -9,13 +9,16 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Address } from "viem";
+import type { Address, Hex } from "viem";
+import { toHex } from "viem";
 import {
   hashkeyTestnet,
   readCurrentAccount,
   requestAccount,
   hasInjectedWallet,
   isTestSignerEnabled,
+  publicClient,
+  getWalletClient,
 } from "./chain";
 
 type EthereumProvider = {
@@ -34,6 +37,8 @@ type WalletState = {
   isRightChain: boolean;
   hasWallet: boolean;
   isTestSigner: boolean;
+  isContractWallet: boolean;
+  signMessage: (message: string) => Promise<Hex>;
 };
 
 const WalletContext = createContext<WalletState | null>(null);
@@ -57,6 +62,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [hasWallet, setHasWallet] = useState(false);
   const [isTestSigner, setIsTestSigner] = useState(false);
+  const [isContractWallet, setIsContractWallet] = useState(false);
 
   // On mount: detect wallet, passively read account + chain if already authorized.
   // If test signer is enabled (dev-only env flag, no injected wallet), wire it
@@ -121,6 +127,54 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Detect smart-contract wallet (Safe, ERC-4337) by reading bytecode at the
+  // signer address. Phase 3 nonce-backup encryption derives its key from a
+  // wallet signature; that derivation is only deterministic for EOAs (RFC 6979)
+  // so contract wallets must be gated out of the backup flow until a passkey-
+  // PRF or recovery-phrase fallback is added.
+  useEffect(() => {
+    let cancelled = false;
+    if (!address) {
+      setIsContractWallet(false);
+      return;
+    }
+    publicClient
+      .getCode({ address })
+      .then((code) => {
+        if (cancelled) return;
+        setIsContractWallet(code !== undefined && code !== "0x" && code.length > 2);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setIsContractWallet(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
+
+  // SIWE auth and the nonce-backup key derivation both need a raw personal_sign
+  // over a fixed string. Test-signer path goes through viem's walletClient so
+  // Playwright e2e works; the injected-wallet path calls personal_sign directly
+  // with the message hex-encoded per EIP-191.
+  const signMessage = useCallback(
+    async (message: string): Promise<Hex> => {
+      if (!address) throw new Error("Wallet not connected.");
+      if (isTestSigner) {
+        const wc = await getWalletClient();
+        return wc.signMessage({ account: wc.account!, message });
+      }
+      const provider = getProvider();
+      if (!provider) throw new Error("No injected wallet.");
+      const sig = (await provider.request({
+        method: "personal_sign",
+        params: [toHex(message), address],
+      })) as Hex;
+      return sig;
+    },
+    [address, isTestSigner],
+  );
+
   const connect = useCallback(async () => {
     setStatus("connecting");
     setError(null);
@@ -156,8 +210,22 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       isRightChain,
       hasWallet,
       isTestSigner,
+      isContractWallet,
+      signMessage,
     }),
-    [address, chainId, status, error, connect, disconnect, isRightChain, hasWallet, isTestSigner],
+    [
+      address,
+      chainId,
+      status,
+      error,
+      connect,
+      disconnect,
+      isRightChain,
+      hasWallet,
+      isTestSigner,
+      isContractWallet,
+      signMessage,
+    ],
   );
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
