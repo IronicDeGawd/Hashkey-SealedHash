@@ -57,6 +57,16 @@ export const nonceBackups = pgTable(
   }),
 );
 
+// Single-row cursor for the Phase 6 systemd indexer. `key` is a constant so
+// the row can be targeted unambiguously and a stray second row would be a
+// loud bug. Stored separately from auction_history so the cursor can
+// advance atomically even if no events were seen in a scan window.
+export const indexerState = pgTable("indexer_state", {
+  key: text("key").primaryKey(),
+  lastIndexedBlock: bigint("last_indexed_block", { mode: "bigint" }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 // Read-cache derived from on-chain SealedBidAuction events. Authoritative
 // state remains the chain — this table may lag, may be wiped and rebuilt by
 // the indexer, and must NEVER be consulted for settlement decisions.

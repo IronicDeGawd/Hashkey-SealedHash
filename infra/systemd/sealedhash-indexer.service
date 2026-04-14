@@ -1,0 +1,14 @@
+[Unit]
+Description=SealedHash on-chain history indexer
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/sealedhash/env
+WorkingDirectory=/opt/sealedhash/frontend
+ExecStart=/usr/bin/npx tsx scripts/indexer.ts
+User=deploy
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=120
