@@ -8,6 +8,7 @@ node_modules/
 scripts/build-design-brief.py
 .env
 .env.local
+.env.production
 .env.*.local
 dist/
 build/
