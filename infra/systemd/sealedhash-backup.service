@@ -1,0 +1,11 @@
+[Unit]
+Description=SealedHash Postgres backup
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/sealedhash/infra/scripts/pg-backup.sh
+User=deploy
+StandardOutput=journal
+StandardError=journal

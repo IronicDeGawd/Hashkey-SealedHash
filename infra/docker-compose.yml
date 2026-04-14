@@ -1,0 +1,24 @@
+# Postgres 16 for SealedHash off-chain backend.
+# Bound to 127.0.0.1 only — never expose this on 0.0.0.0.
+# The Next.js app on the same EC2 host talks to it via localhost.
+services:
+  postgres:
+    image: postgres:16
+    container_name: sealedhash-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sealedhash
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: sealedhash
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - sealedhash_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sealedhash -d sealedhash"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  sealedhash_pgdata:
