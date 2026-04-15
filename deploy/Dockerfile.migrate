@@ -1,0 +1,13 @@
+# syntax=docker/dockerfile:1.6
+# SealedHash one-shot migration runner.
+# Invoked by compose profile "migrate" before the frontend comes up.
+
+FROM node:22-alpine
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/drizzle ./drizzle
+COPY frontend/drizzle.config.ts ./
+COPY frontend/lib ./lib
+CMD ["npx", "drizzle-kit", "migrate"]

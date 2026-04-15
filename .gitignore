@@ -10,6 +10,7 @@ scripts/build-design-brief.py
 .env.local
 .env.production
 .env.*.local
+deploy/.env
 dist/
 build/
 out/

@@ -1,0 +1,86 @@
+# SealedHash production stack.
+#
+# Three services: postgres, frontend (Next.js), indexer (30s tick loop).
+# The migrate service is a one-shot under profile "migrate" — run it
+# once before `docker compose up -d frontend indexer`.
+#
+# Ports are bound to 127.0.0.1 only — Caddy on the host reverse-proxies
+# the frontend. Postgres and the indexer are never exposed publicly.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sealedhash-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sealedhash
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: sealedhash
+    volumes:
+      - sealedhash_pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sealedhash -d sealedhash"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.migrate
+    image: sealedhash-migrate:latest
+    container_name: sealedhash-migrate
+    profiles: ["migrate"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgres://sealedhash:${POSTGRES_PASSWORD}@postgres:5432/sealedhash"
+    restart: "no"
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.frontend
+    image: sealedhash-frontend:latest
+    container_name: sealedhash-frontend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3003"
+      HOSTNAME: "0.0.0.0"
+      DATABASE_URL: "postgres://sealedhash:${POSTGRES_PASSWORD}@postgres:5432/sealedhash"
+      SESSION_PASSWORD: ${SESSION_PASSWORD}
+      NEXT_PUBLIC_HASHKEY_RPC_URL: ${NEXT_PUBLIC_HASHKEY_RPC_URL:-https://testnet.hsk.xyz}
+      NEXT_PUBLIC_VERIFIER_ADDRESS: ${NEXT_PUBLIC_VERIFIER_ADDRESS:-0x9E0830b0D6f180e2Eaf8E14956386383d855cEd7}
+      NEXT_PUBLIC_KYC_SBT_ADDRESS: ${NEXT_PUBLIC_KYC_SBT_ADDRESS:-0x53e1F063166AbFbc7C387839BA439b1bb974E319}
+      NEXT_PUBLIC_AUCTION_ADDRESS: ${NEXT_PUBLIC_AUCTION_ADDRESS:-0x15dd37d92eD9526300FE5de5aB555AeA6C621f22}
+      NEXT_PUBLIC_MOCK_RWA_ADDRESS: ${NEXT_PUBLIC_MOCK_RWA_ADDRESS:-0x6d4b1af928CBE669659521B5DEA37961B37ACCe9}
+      NEXT_PUBLIC_MOCK_USDT_ADDRESS: ${NEXT_PUBLIC_MOCK_USDT_ADDRESS:-0xAfc441e6baf4518f38159AecBd0Eed6EDd083198}
+    ports:
+      - "127.0.0.1:3003:3003"
+
+  indexer:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.indexer
+    image: sealedhash-indexer:latest
+    container_name: sealedhash-indexer
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: "postgres://sealedhash:${POSTGRES_PASSWORD}@postgres:5432/sealedhash"
+      INDEXER_RPC_URL: ${INDEXER_RPC_URL:-https://testnet.hsk.xyz}
+      NEXT_PUBLIC_AUCTION_ADDRESS: ${NEXT_PUBLIC_AUCTION_ADDRESS:-0x15dd37d92eD9526300FE5de5aB555AeA6C621f22}
+
+volumes:
+  sealedhash_pgdata:
+    name: sealedhash_pgdata

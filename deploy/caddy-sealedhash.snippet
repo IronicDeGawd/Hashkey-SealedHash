@@ -1,0 +1,18 @@
+# SealedHash — sealed-bid auction dApp
+# Append to /etc/caddy/Caddyfile and run: sudo systemctl reload caddy
+sealedhash.ironyaditya.xyz {
+    tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin.key
+
+    # COOP/COEP required for @aztec/bb.js WebAssembly SharedArrayBuffer.
+    # Next.js also sets these on every response; duplicated here at the
+    # edge as defence-in-depth in case Cloudflare strips them.
+    header Cross-Origin-Opener-Policy "same-origin"
+    header Cross-Origin-Embedder-Policy "require-corp"
+
+    encode gzip zstd
+
+    reverse_proxy localhost:3003 {
+        header_up X-Forwarded-Proto "https"
+        header_up X-Forwarded-Host {host}
+    }
+}
