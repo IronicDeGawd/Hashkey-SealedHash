@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { refund } from "@/lib/auction";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   auctionId: bigint;
@@ -10,12 +11,15 @@ type Props = {
   onRefunded?: () => void;
 };
 
-/// Pull-pattern refund. Available to any non-winning bidder after the
-/// auction is finalized, including committers who never revealed. The
-/// winner has no refund path - their surplus escrow is returned atomically
-/// in settle().
-export function RefundButton({ auctionId, disabled, reason, onRefunded }: Props) {
-  const [status, setStatus] = useState<"idle" | "working" | "done" | "error">("idle");
+export function RefundButton({
+  auctionId,
+  disabled,
+  reason,
+  onRefunded,
+}: Props) {
+  const [status, setStatus] = useState<"idle" | "working" | "done" | "error">(
+    "idle",
+  );
   const [log, setLog] = useState<string>("");
 
   async function onClick() {
@@ -28,19 +32,32 @@ export function RefundButton({ auctionId, disabled, reason, onRefunded }: Props)
       setStatus("done");
       onRefunded?.();
     } catch (err) {
-      setLog((l) => l + `error: ${err instanceof Error ? err.message : String(err)}\n`);
+      setLog(
+        (l) =>
+          l + `error: ${err instanceof Error ? err.message : String(err)}\n`,
+      );
       setStatus("error");
     }
   }
 
   return (
-    <section>
-      <h3>refund escrow</h3>
-      {reason && <p>{reason}</p>}
-      <button onClick={onClick} disabled={disabled || status === "working"}>
-        {status === "working" ? "working..." : "refund"}
-      </button>
-      <pre style={{ background: "#f0f0f0", padding: 12, whiteSpace: "pre-wrap", marginTop: 8 }}>{log}</pre>
-    </section>
+    <div className="flex flex-col items-start gap-4">
+      {reason && (
+        <p className="text-[14px] text-ink/70">{reason}</p>
+      )}
+      <Button
+        variant="primary"
+        size="md"
+        onClick={onClick}
+        disabled={disabled || status === "working"}
+      >
+        {status === "working" ? "working…" : "Refund escrow"}
+      </Button>
+      {log && (
+        <pre className="w-full max-w-xl max-h-48 overflow-auto whitespace-pre-wrap rounded-[14px] border border-ink/20 bg-ink px-4 py-3 font-mono text-[12px] leading-relaxed text-lime">
+          {log}
+        </pre>
+      )}
+    </div>
   );
 }
