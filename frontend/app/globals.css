@@ -1,17 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #191A23;
+  --color-lime: #B9FF66;
+  --color-paper: #F3F3F3;
+  --color-white: #FFFFFF;
+  --color-danger: #E63946;
+  --color-success: #10B981;
+  --color-muted: #6B6C75;
+
+  --radius-sm: 7px;
+  --radius-md: 14px;
+  --radius-lg: 45px;
+
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-html {
-  height: 100%;
+* {
+  margin: 0;
+  padding: 0;
 }
 
 html,
@@ -20,21 +39,20 @@ body {
   overflow-x: hidden;
 }
 
+html {
+  height: 100%;
+}
+
 body {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-white);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
 }
 
 a {
@@ -42,8 +60,22 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+button {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--color-lime);
+  color: var(--color-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
