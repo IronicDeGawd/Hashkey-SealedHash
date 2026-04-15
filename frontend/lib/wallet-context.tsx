@@ -99,10 +99,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Subscribe to wallet events so the UI reacts when the user flips accounts
-  // or chains from inside MetaMask/OKX.
+  // or chains from inside MetaMask/OKX. Some wallets only emit chainChanged to
+  // authorized sites, so we also re-read chainId on focus/visibility as a
+  // safety net for users who switch chains in MetaMask mid-session.
   useEffect(() => {
     const provider = getProvider();
-    if (!provider?.on || !provider.removeListener) return;
+    if (!provider) return;
 
     const onAccounts = (payload: unknown) => {
       const accounts = payload as string[];
@@ -118,14 +120,36 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const hex = payload as string;
       setChainId(Number.parseInt(hex, 16));
     };
+    const recheckChain = () => {
+      readChainId().then((id) => {
+        if (id !== null) setChainId(id);
+      }).catch(() => {});
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") recheckChain();
+    };
 
-    provider.on("accountsChanged", onAccounts);
-    provider.on("chainChanged", onChain);
+    provider.on?.("accountsChanged", onAccounts);
+    provider.on?.("chainChanged", onChain);
+    window.addEventListener("focus", recheckChain);
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
-      provider.removeListener!("accountsChanged", onAccounts);
-      provider.removeListener!("chainChanged", onChain);
+      provider.removeListener?.("accountsChanged", onAccounts);
+      provider.removeListener?.("chainChanged", onChain);
+      window.removeEventListener("focus", recheckChain);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);
+
+  // Refetch chainId whenever the connected address changes. Covers the case
+  // where a user opens the site on the wrong chain, switches in MetaMask,
+  // then clicks connect — eth_chainId at that moment is authoritative.
+  useEffect(() => {
+    if (!address || isTestSigner) return;
+    readChainId().then((id) => {
+      if (id !== null) setChainId(id);
+    }).catch(() => {});
+  }, [address, isTestSigner]);
 
   // Detect smart-contract wallet (Safe, ERC-4337) by reading bytecode at the
   // signer address. Phase 3 nonce-backup encryption derives its key from a
