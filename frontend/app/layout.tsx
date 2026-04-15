@@ -37,7 +37,7 @@ export default function RootLayout({
         <WalletProvider>
           <TestSignerBanner />
           <TopNav />
-          <main className="flex-1">{children}</main>
+          <main className="w-full flex-1">{children}</main>
           <Footer />
         </WalletProvider>
       </body>
