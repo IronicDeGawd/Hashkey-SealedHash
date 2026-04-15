@@ -10,6 +10,9 @@ import { readIsHuman, selfKycMock } from "@/lib/kyc";
 import { addresses } from "@/lib/addresses";
 import { randomNonce, computeCommitment, saveNonce } from "@/lib/commitment";
 import { hashkeyTestnet } from "@/lib/chain";
+import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
+import { Pill } from "@/components/ui/heading";
 
 type Props = {
   auctionId: bigint;
@@ -27,7 +30,12 @@ type Step =
   | "done"
   | "error";
 
-export function CommitForm({ auctionId, reserve, paymentToken, paymentDecimals }: Props) {
+export function CommitForm({
+  auctionId,
+  reserve,
+  paymentToken,
+  paymentDecimals,
+}: Props) {
   const { address } = useWallet();
   const [bid, setBid] = useState("5000");
   const [escrow, setEscrow] = useState("10000");
@@ -74,7 +82,6 @@ export function CommitForm({ auctionId, reserve, paymentToken, paymentDecimals }
     }
 
     try {
-      // 1. KYC
       if (kycOk === false) {
         setStep("kyc");
         setLog((l) => l + "self-kyc in mock sbt...\n");
@@ -82,7 +89,6 @@ export function CommitForm({ auctionId, reserve, paymentToken, paymentDecimals }
         setKycOk(true);
       }
 
-      // 2. Approve if needed
       if (allowance === null || allowance < escrowBig) {
         setStep("approve");
         setLog((l) => l + `approving ${escrow} of payment token...\n`);
@@ -90,7 +96,6 @@ export function CommitForm({ auctionId, reserve, paymentToken, paymentDecimals }
         setAllowance(escrowBig);
       }
 
-      // 3. Nonce + commitment + persist BEFORE any network call that could lose state
       const nonce = randomNonce();
       const commitment = computeCommitment(bidBig, nonce);
       saveNonce({
@@ -101,9 +106,12 @@ export function CommitForm({ auctionId, reserve, paymentToken, paymentDecimals }
         bid: bidBig,
         nonce,
       });
-      setLog((l) => l + `nonce + commitment saved to localStorage\ncommitment=${commitment}\n`);
+      setLog(
+        (l) =>
+          l +
+          `nonce + commitment saved to localStorage\ncommitment=${commitment}\n`,
+      );
 
-      // 4. Generate proof
       setStep("proving");
       setLog((l) => l + "generating zk proof (client-side)...\n");
       const t0 = performance.now();
@@ -119,49 +127,81 @@ export function CommitForm({ auctionId, reserve, paymentToken, paymentDecimals }
           `proof ok in ${Math.round(t1 - t0)}ms, ${proof.length} bytes, public inputs ${publicInputs.join(", ")}\n`,
       );
 
-      // 5. Commit tx
       setStep("committing");
       setLog((l) => l + "sending commitBid tx...\n");
       const hash = await commitBid(auctionId, escrowBig, commitment, proof);
       setLog((l) => l + `commitBid tx: ${hash}\n`);
       setStep("done");
     } catch (err) {
-      setLog((l) => l + `error: ${err instanceof Error ? err.message : String(err)}\n`);
+      setLog(
+        (l) =>
+          l + `error: ${err instanceof Error ? err.message : String(err)}\n`,
+      );
       setStep("error");
     }
   }
 
   const needsKyc = kycOk === false;
-  const needsApproval = allowance !== null && allowance < BigInt(escrow || "0");
+  const needsApproval =
+    allowance !== null && allowance < BigInt(escrow || "0");
+  const working =
+    step === "proving" ||
+    step === "committing" ||
+    step === "approve" ||
+    step === "kyc";
+
+  const buttonLabel = working
+    ? `working · ${step}…`
+    : needsKyc
+      ? "Self-KYC + approve + prove + commit"
+      : needsApproval
+        ? "Approve + prove + commit"
+        : "Generate proof + commit";
 
   return (
-    <section>
-      <h3>commit bid</h3>
-      <p>
-        kyc: {kycOk === null ? "?" : kycOk ? "ok" : "not approved"} | allowance:{" "}
-        {allowance === null ? "?" : allowance.toString()} | reserve min: {reserve.toString()}
-      </p>
-      <div style={{ display: "grid", gap: 8, maxWidth: 360 }}>
-        <label>
-          bid (private, raw units):{" "}
-          <input value={bid} onChange={(e) => setBid(e.target.value)} style={{ width: 160 }} />
-        </label>
-        <label>
-          escrow (public, raw units):{" "}
-          <input value={escrow} onChange={(e) => setEscrow(e.target.value)} style={{ width: 160 }} />
-        </label>
-        <small>payment token has {paymentDecimals} decimals; these fields are raw integer amounts.</small>
-        <button onClick={onCommit} disabled={step === "proving" || step === "committing" || step === "approve" || step === "kyc"}>
-          {step === "idle" || step === "done" || step === "error"
-            ? needsKyc
-              ? "self-kyc + approve + prove + commit"
-              : needsApproval
-                ? "approve + prove + commit"
-                : "generate proof + commit"
-            : `working (${step})...`}
-        </button>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-wrap items-center gap-3">
+        <Pill variant={kycOk ? "green" : "white"}>
+          kyc · {kycOk === null ? "?" : kycOk ? "ok" : "not approved"}
+        </Pill>
+        <Pill variant="white">
+          allowance · {allowance === null ? "?" : allowance.toString()}
+        </Pill>
+        <Pill variant="white">reserve ≥ {reserve.toString()}</Pill>
       </div>
-      <pre style={{ background: "#f0f0f0", padding: 12, whiteSpace: "pre-wrap", marginTop: 8 }}>{log}</pre>
-    </section>
+
+      <div className="grid max-w-xl gap-5">
+        <Field
+          label="Bid · private · raw units"
+          value={bid}
+          onChange={(e) => setBid(e.target.value)}
+          mono
+          inputMode="numeric"
+          hint="Hidden from the chain until reveal."
+        />
+        <Field
+          label="Escrow · public · raw units"
+          value={escrow}
+          onChange={(e) => setEscrow(e.target.value)}
+          mono
+          inputMode="numeric"
+          hint={`Payment token uses ${paymentDecimals} decimals. Raw integers only.`}
+        />
+        <Button
+          variant="tertiary"
+          size="default"
+          onClick={onCommit}
+          disabled={working}
+        >
+          {buttonLabel}
+        </Button>
+      </div>
+
+      {log && (
+        <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-[14px] border border-[#191A23] bg-[#191A23] px-5 py-4 font-mono text-sm leading-relaxed text-[#B9FF66]">
+          {log}
+        </pre>
+      )}
+    </div>
   );
 }

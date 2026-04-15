@@ -3,25 +3,20 @@
 import { useWallet } from "@/lib/wallet-context";
 import { shortAddress } from "@/lib/format";
 
-/// Yellow banner that appears on every page when the app is running against
-/// a local private-key signer instead of an injected wallet. Strictly for
-/// dev + Playwright; production builds strip the test signer path.
 export function TestSignerBanner() {
   const { isTestSigner, address } = useWallet();
   if (!isTestSigner) return null;
   return (
     <div
       role="alert"
-      style={{
-        background: "#fff4a3",
-        borderBottom: "2px solid #d4a300",
-        padding: "6px 12px",
-        fontFamily: "monospace",
-        fontSize: 12,
-      }}
+      className="w-full border-b border-[#191A23] bg-[#B9FF66] px-5 py-3 text-center text-sm font-medium text-[#191A23] md:px-16"
     >
-      TEST SIGNER ACTIVE — writes are being signed by a local private key from
-      .env.local ({shortAddress(address)}). Never enable this in production.
+      <span className="mr-3 inline-block rounded-[7px] bg-[#191A23] px-2 py-1 text-xs text-[#B9FF66]">
+        TEST SIGNER
+      </span>
+      active — writes signed by a local key from .env.local (
+      <span className="font-mono">{shortAddress(address)}</span>). never
+      enable this in production.
     </div>
   );
 }

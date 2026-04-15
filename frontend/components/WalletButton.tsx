@@ -1,43 +1,69 @@
 "use client";
 
 import { useWallet } from "@/lib/wallet-context";
-import { shortAddress } from "@/lib/format";
 import { ensureHashkeyTestnet } from "@/lib/chain";
+import { Button } from "@/components/ui/button";
+import { Address } from "@/components/ui/address";
+import { Pill } from "@/components/ui/heading";
 
-/// Minimal wallet button. Four states: no wallet, idle, connecting, connected.
-/// Intentionally unstyled - design team replaces this component wholesale later.
 export function WalletButton() {
-  const { address, status, error, connect, disconnect, isRightChain, hasWallet } = useWallet();
+  const { address, status, error, connect, disconnect, isRightChain, hasWallet } =
+    useWallet();
 
   if (!hasWallet) {
     return (
-      <div>
-        <button disabled>no wallet</button>
-        <div>install okx or metamask</div>
+      <div className="flex flex-col items-end gap-1">
+        <Button variant="secondary" size="sm" disabled>
+          no wallet
+        </Button>
+        <span className="text-xs text-[#191A23]/60">
+          install okx or metamask
+        </span>
       </div>
     );
   }
 
   if (status === "connecting") {
-    return <button disabled>connecting...</button>;
+    return (
+      <Button variant="secondary" size="sm" disabled>
+        connecting…
+      </Button>
+    );
   }
 
   if (address) {
     return (
-      <div>
-        <span>{shortAddress(address)}</span>
+      <div className="flex items-center gap-3">
         {!isRightChain && (
-          <button onClick={() => ensureHashkeyTestnet()}>switch to hashkey testnet</button>
+          <Button
+            variant="tertiary"
+            size="sm"
+            onClick={() => ensureHashkeyTestnet()}
+          >
+            switch to hashkey testnet
+          </Button>
         )}
-        <button onClick={disconnect}>disconnect</button>
+        {isRightChain && (
+          <span className="hidden md:inline-block">
+            <Pill variant="green">HashKey Testnet</Pill>
+          </span>
+        )}
+        <Address value={address} copyable />
+        <Button variant="secondary" size="sm" onClick={disconnect}>
+          disconnect
+        </Button>
       </div>
     );
   }
 
   return (
-    <div>
-      <button onClick={connect}>connect wallet</button>
-      {error && <div>error: {error}</div>}
+    <div className="flex flex-col items-end gap-1">
+      <Button variant="primary" size="sm" onClick={connect}>
+        connect wallet
+      </Button>
+      {error && (
+        <span className="max-w-[220px] text-xs text-[#8B0000]">{error}</span>
+      )}
     </div>
   );
 }
