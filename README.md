@@ -138,6 +138,69 @@ auction mUSDT balance: 30000 -> 20000 (escrow returned)
 
 `HonkVerifier` runtime bytecode is **24,252 bytes**, 324 bytes under the 24,576 EIP-170 limit. Achieved by dropping `optimizer_runs` to `1`. Any future circuit change that grows the bytecode past 24,576 will break the deploy — run `forge inspect HonkVerifier deployedBytecode` and divide by 2 to monitor.
 
+### Frontend — Next.js build + Playwright sweep
+
+Post-remold verification. Run with `cd frontend && npm run build` for the static gate and an MCP Playwright browser driver for the interactive sweep.
+
+| Surface | Checks | Result |
+|---|---|---|
+| `npm run build` | TypeScript strict, Next.js 16 App Router, 15 routes (5 static, 4 API, 6 dynamic / SSR) | clean, no type or font errors |
+| `/` (landing) | hero renders, tech-strip marquee animation key `sh-marquee 28s linear infinite`, 6 feature cards with hover lift, accordion opens | ✅ |
+| `/how-it-works` | long-form article, envelope SVG, 4 numbered phase blocks, comparison grid, related links | ✅ |
+| `/auctions` (filters) | 5 filter pills render with live counts, clicking "Finalized" collapses card grid from 5 → 1 | ✅ |
+| `/auctions/[id]` (detail) | summary + your-position + ink actions block, status pill reflects on-chain phase | ✅ |
+| `/auctions/[id]/mybid` | commitment card with full hash display, reveal/refund branches | ✅ |
+| `/create`, `/dev` | form + hints layout, dev ZK smoke test generates a real proof end-to-end | ✅ |
+| Route transition | `<PageTransition />` mounts 3 blocks at z-80 on `usePathname` change | ✅ |
+| Test-signer bridge canary | `/dev` proof generator runs via `@aztec/bb.js` WebAssembly, output JSON populates, verifies COOP/COEP still intact | ✅ |
+| Responsive sweep | 1440px desktop + 1920px wide + 375px mobile, no horizontal overflow, footer reaches viewport bottom | ✅ |
+
+## Security review
+
+Three separate review passes are on record. All findings are documented here; none block deployment.
+
+### Pass 1 — contract surface (Foundry)
+
+The contract test suite is the first line of defence. All 16 tests hit the real on-chain verifier and a real proof fixture — no mocks. The suite was designed to hit each known failure mode:
+
+- **Reentrancy**: commit / reveal / settle / refund are single-state-transition paths with effects written before external calls. `settle()` writes `FINALIZED` before the payout loop.
+- **KYC gate bypass**: tests 3 + 4 assert the `IKycSBT.isHuman` check rejects non-KYC and sub-level addresses at commit time, not reveal time.
+- **Verifier bypass**: test 5 proves the verifier rejects when the escrow public input doesn't match the proof's bound value. The circuit's public inputs are `[reserve, escrow]` and both are re-bound in Solidity.
+- **Commit / reveal deadline races**: tests 8 + 9 + 10 + 11 assert every state transition enforces its deadline strictly.
+- **Nonce reuse / double commit**: test 7 asserts one commitment per bidder per auction.
+- **Defence-in-depth range recheck**: test 13 asserts the contract re-asserts `reserve ≤ bid ≤ escrow` at reveal time, so a compromised circuit cannot break the invariant.
+- **Refund pull-pattern idempotency**: test 15 + 16 assert `settle()` can only be called once and losers can refund exactly once.
+
+**Finding**: The `MockKycSBT` used in tests permits self-KYC. The live HashKey testnet SBT at `0xA45f42F09A7Ae50e556467cf65cF3Cf45711114E` is interface-compatible, and the wire is a single env flip. Production deployment MUST NOT ship `MockKycSBT`.
+
+### Pass 2 — frontend remold diff (2026-04-15)
+
+Targeted audit of the 38-file, 4230-insertion `frontend-design` diff before merging to `main`. The goal was to verify the UI remold did not introduce any injection, secret leakage, or unsafe DOM operations, and did not disturb the frozen contract boundaries.
+
+| Category | Check | Result |
+|---|---|---|
+| XSS / unsafe HTML | `dangerouslySetInnerHTML`, `innerHTML =`, `document.write` | zero occurrences in diff |
+| Code injection | `eval(`, `new Function(`, string `setTimeout` / `setInterval` | zero occurrences |
+| Dangerous URLs | `javascript:`, `data:text/html` in any href | zero occurrences |
+| External links | all 10 `target="_blank"` anchors use `rel="noreferrer"` (implies noopener in modern browsers) | ✅ |
+| Secrets / env leaks | grep for `process.env` in new components/pages | zero reads outside `lib/chain.ts` + `lib/addresses.ts` (unchanged) |
+| Frozen boundaries | `lib/auction`, `lib/erc20`, `lib/kyc`, `lib/commitment`, `lib/prove`, `lib/chain`, `lib/wallet-context`, `lib/addresses`, `lib/db/*`, `lib/crypto/*`, `next.config.ts`, `contracts/`, `circuits/`, `/api/*`, `scripts/indexer.ts` | zero changes — all intact |
+| Storage key | `hashkey-sealed-bid-v1` in `lib/commitment.ts` | intact |
+| COOP / COEP headers | `Cross-Origin-Opener-Policy: same-origin` + `Cross-Origin-Embedder-Policy: require-corp` in `next.config.ts` | intact, verified by cold proof canary at `/dev` |
+| Test-signer bridge gates | `NEXT_PUBLIC_TEST_PRIVATE_KEY` + `NODE_ENV !== "production"` + no `window.ethereum` in `lib/chain.ts` | intact |
+
+**Informational findings** (not blocking):
+
+1. `/how-it-works` article copy documents `NEXT_PUBLIC_TEST_PRIVATE_KEY` as a setup instruction. This reveals the bridge path name but not any secret. The bridge is already compile-time stripped in production builds. If shipping to production, rename to `TEST_PRIVATE_KEY` (non-`NEXT_PUBLIC_`) and drop the doc line.
+2. All `target="_blank"` links use `rel="noreferrer"` but not explicit `noopener`. `noreferrer` implies `noopener` in every browser shipping today, so this is portable; `rel="noreferrer noopener"` would be maximally explicit.
+
+### Pass 3 — dependency / supply chain
+
+- `npm audit` with `--omit=dev` (production-only): **0 vulnerabilities** across `info`, `low`, `moderate`, `high`, `critical`.
+- `npm audit` (full): **4 moderate** — all in `drizzle-kit`'s bundled `esbuild` dev CLI (GHSA-67mh-4wv8-2f99). This is a dev-server-only issue; the `drizzle-kit` CLI is never invoked in production runtime and `esbuild` is never shipped in the Next.js bundle. **Not exploitable in our deployment.**
+- `motion@12.38.0` — official `motiondivision/motion` package (MIT, Matt Perry's team, same repo as `framer-motion`). Depends on `framer-motion@^12.38.0` + `tslib`. Supply chain provenance verified.
+- No new `package.json` dependencies beyond `motion`, `tailwindcss@4`, `@tailwindcss/postcss@4`, `postcss@8`. All are well-maintained upstream packages.
+
 ## Repository layout
 
 ```
