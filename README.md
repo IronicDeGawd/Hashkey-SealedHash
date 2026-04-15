@@ -1,10 +1,37 @@
-# HashKey Sealed-Bid Auction
+# SealedHash — Private Sealed-Bid Auctions on HashKey Chain
 
-Private sealed-bid auction for tokenized real-world assets on HashKey Chain. Bidders prove in zero knowledge that `reserve ≤ bid ≤ escrow` before the bid is ever transmitted. Solvency is verifiable; the bid stays hidden until the reveal window. Submission for the HashKey Chain Horizon Hackathon, ZKID track.
+> **HashKey Chain Horizon Hackathon submission — ZKID track.**
+> **Repository:** [github.com/IronicDeGawd/Haskkey-SealedHash](https://github.com/IronicDeGawd/Haskkey-SealedHash)
+> **Network:** HashKey Chain Testnet (chainId 133)
+> **Live auction contract:** [`0x15dd37d92eD9526300FE5de5aB555AeA6C621f22`](https://testnet-explorer.hsk.xyz/address/0x15dd37d92eD9526300FE5de5aB555AeA6C621f22)
+
+## One-liner
+
+A sealed-bid auction for tokenized real-world assets where **bidders prove in zero knowledge that `reserve ≤ bid ≤ escrow` before the bid ever leaves the browser**. Solvency is verifiable on-chain; the bid itself stays hidden until the reveal window. Commit-reveal alone cannot prove solvency without disclosure — this is the property that makes the ZK load-bearing, not decorative.
+
+## What problem it solves
+
+Traditional on-chain auctions leak every bid the moment it hits the mempool, letting MEV bots front-run and competing bidders collude. Plain commit-reveal hides the value but cannot prove a bidder actually has enough collateral to back their bid until the reveal — by which point a bad actor has already wasted everyone's time. SealedHash combines **on-chain commit-reveal** with a **Noir range-proof circuit** so each bidder escrows funds, proves `reserve ≤ bid ≤ escrow` without revealing `bid`, and the contract can safely accept the commitment knowing the bid is already collateralized. The seller gets true sealed-bid semantics with zero disclosure risk and zero insolvent bids.
+
+## How it works (30 seconds)
+
+1. **Commit.** Bidder generates a Noir proof in-browser that `reserve ≤ bid ≤ escrow`, locks `escrow` tokens into the auction contract, and submits `commitment = keccak256(bid, nonce)` alongside the proof. KYC SBT is checked before the commit is accepted.
+2. **Reveal.** After the commit window closes, the bidder reveals `(bid, nonce)`. The contract recomputes the hash and re-asserts the range on-chain as defence-in-depth.
+3. **Settle.** Anyone can call `settle()` after the reveal window. Asset goes to the highest revealed bidder, winning bid goes to the seller, escrow surplus is refunded atomically. Non-winners pull their refunds via `refund()`.
 
 ## Why this is load-bearing ZK, not "ZK in name"
 
-The range proof is the only reason this design beats plain commit-reveal. Without ZK, you cannot prove `bid ≤ escrow` without revealing the bid. Commitment binding uses plain `keccak256(bid, nonce)` on-chain at reveal time — the circuit stays minimal and the ZK property is exactly "solvency without disclosure," which no non-ZK scheme can match.
+The range proof is the only reason this design beats plain commit-reveal. Without ZK, you cannot prove `bid ≤ escrow` without revealing the bid. Commitment binding uses plain `keccak256(bid, nonce)` on-chain at reveal time — the circuit stays minimal and the ZK property is exactly **"solvency without disclosure,"** which no non-ZK scheme can match.
+
+## Highlights
+
+- **Full Noir 1.0.0-beta.19 → UltraHonk → Solidity verifier pipeline**, auto-generated, transparent (no trusted setup).
+- **Browser-side proving** via `@aztec/bb.js 4.1.1` in Next.js 16 / React 19. Cold proof 18.8s, warm ~1.5s, 7232-byte proof.
+- **KYC-gated** via `IKycSBT` — MockKycSBT for demo, live HashKey testnet SBT at `0xA45f42F09A7Ae50e556467cf65cF3Cf45711114E` wire-compatible (single env flip).
+- **16/16 Foundry tests passing** against a real on-chain proof fixture — not mocks.
+- **EIP-170-compliant verifier**: runtime bytecode squeezed to **24,252 bytes** (324 bytes under the 24,576 limit).
+- **Every state path verified live on HashKey testnet**: create → commit → reveal → settle, plus no-commit, no-reveal, and refund edge cases.
+- **Off-chain v2 backend (post-submission)** — SIWE auth, HKDF-AES-GCM encrypted nonce backup derived from wallet signatures, Drizzle/Postgres indexer — so users cannot lose bids to a cleared localStorage while plaintext still never leaves the browser.
 
 ## Stack
 
@@ -202,6 +229,12 @@ npm run dev                           # http://localhost:3000
 - Mobile responsive layout
 - Production KYC integration (code-ready, blocked on hunyuankyc.com being reachable)
 - Mainnet deployment
+
+## Links
+
+- **Source:** [github.com/IronicDeGawd/Haskkey-SealedHash](https://github.com/IronicDeGawd/Haskkey-SealedHash)
+- **Live auction contract:** [testnet-explorer.hsk.xyz/address/0x15dd37d92eD9526300FE5de5aB555AeA6C621f22](https://testnet-explorer.hsk.xyz/address/0x15dd37d92eD9526300FE5de5aB555AeA6C621f22)
+- **HashKey Chain Horizon Hackathon:** [dorahacks.io/hackathon/2045](https://dorahacks.io/hackathon/2045)
 
 ## License
 
