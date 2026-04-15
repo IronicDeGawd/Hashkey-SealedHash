@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import { WalletProvider } from "@/lib/wallet-context";
 import { TestSignerBanner } from "@/components/TestSignerBanner";
+import { TopNav } from "@/components/chrome/top-nav";
+import { Footer } from "@/components/chrome/footer";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -44,7 +46,9 @@ export default function RootLayout({
       <body>
         <WalletProvider>
           <TestSignerBanner />
-          {children}
+          <TopNav />
+          <main className="flex-1">{children}</main>
+          <Footer />
         </WalletProvider>
       </body>
     </html>
