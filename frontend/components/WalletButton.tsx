@@ -14,10 +14,10 @@ export function WalletButton() {
     return (
       <div className="flex flex-col items-end gap-1">
         <Button variant="secondary" size="sm" disabled>
-          no wallet
+          No wallet
         </Button>
         <span className="text-xs text-[#191A23]/60">
-          install okx or metamask
+          Install OKX or MetaMask
         </span>
       </div>
     );
@@ -26,7 +26,7 @@ export function WalletButton() {
   if (status === "connecting") {
     return (
       <Button variant="secondary" size="sm" disabled>
-        connecting…
+        Connecting…
       </Button>
     );
   }
@@ -40,7 +40,7 @@ export function WalletButton() {
             size="sm"
             onClick={() => ensureHashkeyTestnet()}
           >
-            switch to hashkey testnet
+            Switch to HashKey Testnet
           </Button>
         )}
         {isRightChain && (
@@ -50,7 +50,7 @@ export function WalletButton() {
         )}
         <Address value={address} copyable />
         <Button variant="secondary" size="sm" onClick={disconnect}>
-          disconnect
+          Disconnect
         </Button>
       </div>
     );
@@ -59,7 +59,7 @@ export function WalletButton() {
   return (
     <div className="flex flex-col items-end gap-1">
       <Button variant="primary" size="sm" onClick={connect}>
-        connect wallet
+        Connect wallet
       </Button>
       {error && (
         <span className="max-w-[220px] text-xs text-[#8B0000]">{error}</span>

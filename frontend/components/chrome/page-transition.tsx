@@ -1,55 +1,51 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
 
 /**
- * Route-change overlay. Three colored blocks race down to cover the viewport,
- * then race down again to reveal the next page underneath. Ink leads, white
- * follows by 80ms, lime follows by 160ms.
+ * Route-change overlay. Mounted from app/template.tsx so Next.js re-mounts
+ * it on every navigation — the initial→animate transition runs fresh every
+ * time.
  *
- * Watches pathname; on change, increments an animation key so the motion
- * component re-runs its keyframes.
+ * Two curtains start fully covering the viewport and peel upward from the
+ * bottom (scaleY 1 → 0 with transformOrigin bottom). The new page beneath
+ * is only visible as each curtain shrinks, so there's no window where the
+ * fresh route is rendered underneath an exiting block.
+ *
+ * Content behind the curtains fades in with a 0.4s delay so it lands just
+ * as the lime curtain finishes clearing.
  */
-export function PageTransition() {
-  const pathname = usePathname();
-  const [animKey, setAnimKey] = useState(0);
-  const firstMount = useRef(true);
-
-  useEffect(() => {
-    if (firstMount.current) {
-      firstMount.current = false;
-      return;
-    }
-    setAnimKey((n) => n + 1);
-  }, [pathname]);
-
+export function PageTransition({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-[80] overflow-hidden"
-    >
-      <Block key={`ink-${animKey}`} color="#191A23" delay={0} />
-      <Block key={`white-${animKey}`} color="#FFFFFF" delay={0.08} />
-      <Block key={`lime-${animKey}`} color="#B9FF66" delay={0.16} />
-    </div>
-  );
-}
+    <>
+      {/* Ink curtain — top layer, peels away first */}
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-[101] bg-[#191A23]"
+        initial={{ scaleY: 1 }}
+        animate={{ scaleY: 0 }}
+        style={{ transformOrigin: "bottom" }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      />
 
-function Block({ color, delay }: { color: string; delay: number }) {
-  return (
-    <motion.div
-      initial={{ y: "-100%" }}
-      animate={{ y: ["-100%", "0%", "0%", "100%"] }}
-      transition={{
-        duration: 1.4,
-        delay,
-        times: [0, 0.35, 0.5, 1],
-        ease: [0.76, 0, 0.24, 1],
-      }}
-      className="absolute inset-0 h-full w-full"
-      style={{ backgroundColor: color }}
-    />
+      {/* Lime curtain — second layer, peels away 150ms later */}
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-[100] bg-[#B9FF66]"
+        initial={{ scaleY: 1 }}
+        animate={{ scaleY: 0 }}
+        style={{ transformOrigin: "bottom" }}
+        transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+      />
+
+      {/* Content fades in once the curtains have cleared */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.4, ease: "easeOut" }}
+      >
+        {children}
+      </motion.div>
+    </>
   );
 }
