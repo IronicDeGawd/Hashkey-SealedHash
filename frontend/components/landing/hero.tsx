@@ -19,7 +19,7 @@ export function Hero() {
             <LinkButton href="/auctions" variant="primary">
               View live auctions
             </LinkButton>
-            <LinkButton href="#how-it-works" variant="secondary">
+            <LinkButton href="/how-it-works" variant="secondary">
               How it works
             </LinkButton>
           </div>
@@ -316,26 +316,39 @@ export function Hero() {
         </div>
       </div>
 
-      {/* Tech strip */}
-      <div className="border-y border-[#191A23] py-8">
-        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-6 px-5 md:px-16">
-          {[
-            "HashKey Chain",
-            "Noir",
-            "UltraHonk",
-            "Foundry",
-            "Viem",
-            "Next.js",
-          ].map((brand) => (
-            <span
-              key={brand}
-              className="text-xl font-semibold text-[#191A23] opacity-80"
-            >
+      {/* Tech strip marquee */}
+      <TechMarquee />
+    </section>
+  );
+}
+
+function TechMarquee() {
+  const stack = [
+    "HashKey Chain",
+    "Noir",
+    "UltraHonk",
+    "Foundry",
+    "Viem",
+    "Next.js",
+    "bb.js",
+    "viem",
+    "Tailwind",
+    "Drizzle",
+  ];
+  // Duplicate to make the -50% translate seamless
+  const loop = [...stack, ...stack];
+  return (
+    <div className="w-full overflow-hidden border-y border-[#191A23] bg-white py-8">
+      <div className="sh-marquee-track">
+        {loop.map((brand, i) => (
+          <div key={`${brand}-${i}`} className="flex items-center">
+            <span className="px-10 text-2xl font-medium text-[#191A23]">
               {brand}
             </span>
-          ))}
-        </div>
+            <span className="inline-block h-2 w-2 rounded-full bg-[#B9FF66]" />
+          </div>
+        ))}
       </div>
-    </section>
+    </div>
   );
 }

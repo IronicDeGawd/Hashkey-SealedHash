@@ -109,14 +109,14 @@ function FeatureCard({
   return (
     <div
       className={cn(
-        "flex flex-col justify-between gap-8 rounded-[45px] border border-[#191A23] p-8 md:p-10",
+        "group relative flex flex-col justify-between gap-8 rounded-[45px] border border-[#191A23] p-8 shadow-[0_0_0_0_#191A23] transition-all duration-300 ease-out hover:-translate-y-2 hover:shadow-[0_6px_0_0_#191A23] md:p-10",
         bg
       )}
     >
       <div className="flex flex-col gap-6">
         <span
           className={cn(
-            "inline-block w-fit rounded-[7px] px-[7px] py-[5px] text-lg font-medium text-[#191A23] md:text-xl",
+            "inline-block w-fit rounded-[7px] px-[7px] py-[5px] text-lg font-medium text-[#191A23] transition-transform duration-300 ease-out group-hover:scale-105 md:text-xl",
             labelBg
           )}
         >
@@ -136,16 +136,28 @@ function FeatureCard({
       </div>
 
       <a
-        href="#how-it-works"
-        className={cn("inline-flex items-center gap-3 text-base font-medium", textColor)}
+        href="/how-it-works"
+        className={cn(
+          "inline-flex items-center gap-3 text-base font-medium transition-[gap] duration-300 ease-out group-hover:gap-4",
+          textColor
+        )}
       >
         <span
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-full",
+            "flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-300 ease-out group-hover:scale-110 group-hover:rotate-[-8deg]",
             arrowBg
           )}
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={arrowText}>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            className={cn(
+              "transition-transform duration-300 ease-out group-hover:translate-x-[2px]",
+              arrowText
+            )}
+          >
             <path
               d="M2 8h12M10 4l4 4-4 4"
               stroke="currentColor"
@@ -155,7 +167,9 @@ function FeatureCard({
             />
           </svg>
         </span>
-        Learn more
+        <span className="transition-transform duration-300 ease-out group-hover:translate-x-[2px]">
+          Learn more
+        </span>
       </a>
     </div>
   );

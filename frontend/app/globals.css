@@ -49,6 +49,25 @@ button {
   color: #191A23;
 }
 
+@keyframes sh-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.sh-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: sh-marquee 28s linear infinite;
+}
+
+.sh-marquee-track:hover {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

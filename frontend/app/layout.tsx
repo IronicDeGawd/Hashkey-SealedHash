@@ -4,6 +4,7 @@ import { WalletProvider } from "@/lib/wallet-context";
 import { TestSignerBanner } from "@/components/TestSignerBanner";
 import { TopNav } from "@/components/chrome/top-nav";
 import { Footer } from "@/components/chrome/footer";
+import { PageTransition } from "@/components/chrome/page-transition";
 import "./globals.css";
 
 const inter = Inter({
@@ -35,6 +36,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body>
         <WalletProvider>
+          <PageTransition />
           <TestSignerBanner />
           <TopNav />
           <main className="w-full flex-1">{children}</main>

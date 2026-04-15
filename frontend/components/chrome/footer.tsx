@@ -9,7 +9,7 @@ const DORAHACKS = "https://dorahacks.io/hackathon/2045";
 const navLinks = [
   { href: "/auctions", label: "Auctions" },
   { href: "/create", label: "Create" },
-  { href: "/#how-it-works", label: "How it works" },
+  { href: "/how-it-works", label: "How it works" },
   { href: "/dev", label: "Dev tools" },
 ];
 
