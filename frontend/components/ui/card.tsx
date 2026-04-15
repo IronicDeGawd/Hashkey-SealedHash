@@ -3,23 +3,21 @@ import { cn } from "@/lib/cn";
 
 type CardVariant = "paper" | "white" | "lime" | "ink";
 
+const variantClass: Record<CardVariant, string> = {
+  paper: "bg-[#F3F3F3] text-[#191A23]",
+  white: "bg-white text-[#191A23]",
+  lime: "bg-[#B9FF66] text-[#191A23]",
+  ink: "bg-[#191A23] text-white",
+};
+
 type CardProps = {
   variant?: CardVariant;
-  hover?: boolean;
   className?: string;
   children: React.ReactNode;
 } & React.HTMLAttributes<HTMLDivElement>;
 
-const variants: Record<CardVariant, string> = {
-  paper: "bg-paper text-ink",
-  white: "bg-white text-ink",
-  lime: "bg-lime text-ink",
-  ink: "bg-ink text-white",
-};
-
 export function Card({
   variant = "paper",
-  hover = true,
   className,
   children,
   ...rest
@@ -28,10 +26,8 @@ export function Card({
     <div
       {...rest}
       className={cn(
-        "relative rounded-[45px] border border-ink p-8 md:p-10",
-        "shadow-[0_5px_0_0_theme(colors.ink)]",
-        hover && "transition-transform duration-200 ease-out hover:-translate-y-1",
-        variants[variant],
+        "rounded-[45px] border border-[#191A23] p-10",
+        variantClass[variant],
         className
       )}
     >
@@ -50,7 +46,7 @@ export function CardTitle({
   return (
     <h3
       className={cn(
-        "font-display text-[26px] font-semibold leading-[1.1] tracking-tight md:text-[30px]",
+        "text-[30px] leading-[1.3] font-medium text-inherit",
         className
       )}
     >
@@ -67,7 +63,7 @@ export function CardBody({
   className?: string;
 }) {
   return (
-    <div className={cn("text-[15px] leading-relaxed text-current/80", className)}>
+    <div className={cn("text-base leading-relaxed", className)}>
       {children}
     </div>
   );

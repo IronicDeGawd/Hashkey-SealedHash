@@ -6,11 +6,9 @@ import { addresses } from "@/lib/addresses";
 import { approve } from "@/lib/erc20";
 import { createAuction } from "@/lib/auction";
 import type { Address } from "viem";
-import { SectionHeading } from "@/components/ui/heading";
-import { Card, CardTitle } from "@/components/ui/card";
+import { SectionHeading, Pill } from "@/components/ui/heading";
 import { Field } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
-import { Pill } from "@/components/ui/pill";
 
 export default function CreatePage() {
   const { address } = useWallet();
@@ -51,125 +49,132 @@ export default function CreatePage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1000px] px-5 py-16 md:px-10 md:py-20">
-      <SectionHeading
-        label="Seller flow"
-        title="Create a sealed-bid auction."
-        description="Set the asset, the reserve, and the window. The auction contract enforces KYC level 1 and escrows the asset on creation."
-      />
+    <div className="mx-auto max-w-[1440px] px-5 py-16 md:px-16 md:py-20">
+      <div className="mb-14">
+        <SectionHeading
+          label="Seller flow"
+          title="Create a sealed-bid auction"
+        />
+        <p className="mt-5 max-w-2xl text-lg text-[#191A23]/70">
+          Set the asset, the reserve, and the window. The auction contract
+          enforces KYC level 1 and escrows the asset on creation.
+        </p>
+      </div>
 
-      <div className="mt-12 grid gap-8 md:grid-cols-[1fr_320px]">
-        <Card variant="paper" hover={false}>
-          <div className="flex flex-col gap-6">
-            <CardTitle>Auction parameters</CardTitle>
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-[1.3fr_1fr] md:gap-10">
+        {/* Form card */}
+        <div className="rounded-[45px] border border-[#191A23] bg-[#F3F3F3] p-8 md:p-10">
+          <h2 className="mb-8 text-[30px] font-medium leading-[1.2] text-[#191A23]">
+            Auction parameters
+          </h2>
 
-            {!address && (
-              <div className="rounded-[14px] border border-ink/15 bg-white px-5 py-4 text-[14px] text-ink/70">
-                Connect a wallet to create an auction.
+          {!address && (
+            <div className="rounded-[14px] border border-[#191A23]/20 bg-white px-6 py-5 text-base text-[#191A23]/70">
+              Connect a wallet to create an auction.
+            </div>
+          )}
+
+          {address && (
+            <div className="grid gap-6">
+              <Field
+                label="Asset token"
+                value={asset}
+                onChange={(e) => setAsset(e.target.value)}
+                mono
+              />
+              <Field
+                label="Asset amount · raw"
+                value={assetAmount}
+                onChange={(e) => setAssetAmount(e.target.value)}
+                mono
+                inputMode="numeric"
+                hint="1e18 = 1 mRWA"
+              />
+              <Field
+                label="Payment token"
+                value={paymentToken}
+                onChange={(e) => setPaymentToken(e.target.value)}
+                mono
+              />
+              <Field
+                label="Reserve · raw"
+                value={reserve}
+                onChange={(e) => setReserve(e.target.value)}
+                mono
+                inputMode="numeric"
+              />
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <Field
+                  label="Commit window · hours"
+                  value={commitHours}
+                  onChange={(e) => setCommitHours(e.target.value)}
+                  mono
+                  inputMode="numeric"
+                />
+                <Field
+                  label="Reveal window · hours"
+                  value={revealHours}
+                  onChange={(e) => setRevealHours(e.target.value)}
+                  mono
+                  inputMode="numeric"
+                />
               </div>
-            )}
-
-            {address && (
-              <div className="grid gap-5">
-                <Field
-                  label="Asset token"
-                  value={asset}
-                  onChange={(e) => setAsset(e.target.value)}
-                  mono
-                />
-                <Field
-                  label="Asset amount · raw"
-                  value={assetAmount}
-                  onChange={(e) => setAssetAmount(e.target.value)}
-                  mono
-                  inputMode="numeric"
-                  hint="1e18 = 1 mRWA"
-                />
-                <Field
-                  label="Payment token"
-                  value={paymentToken}
-                  onChange={(e) => setPaymentToken(e.target.value)}
-                  mono
-                />
-                <Field
-                  label="Reserve · raw"
-                  value={reserve}
-                  onChange={(e) => setReserve(e.target.value)}
-                  mono
-                  inputMode="numeric"
-                />
-                <div className="grid gap-5 md:grid-cols-2">
-                  <Field
-                    label="Commit window · hours"
-                    value={commitHours}
-                    onChange={(e) => setCommitHours(e.target.value)}
-                    mono
-                    inputMode="numeric"
-                  />
-                  <Field
-                    label="Reveal window · hours"
-                    value={revealHours}
-                    onChange={(e) => setRevealHours(e.target.value)}
-                    mono
-                    inputMode="numeric"
-                  />
-                </div>
-                <Button
-                  variant="accent"
-                  size="lg"
-                  onClick={onCreate}
-                  disabled={status === "working"}
+              <Button
+                variant="tertiary"
+                size="default"
+                onClick={onCreate}
+                disabled={status === "working"}
+              >
+                {status === "working"
+                  ? "working…"
+                  : "Approve asset + create auction"}
+              </Button>
+              <div className="flex items-center gap-2">
+                <Pill
+                  variant={
+                    status === "done"
+                      ? "green"
+                      : status === "error"
+                        ? "black"
+                        : "white"
+                  }
                 >
-                  {status === "working"
-                    ? "working…"
-                    : "Approve asset + create auction"}
-                </Button>
-                <div className="flex items-center gap-2">
-                  <Pill
-                    tone={
-                      status === "done"
-                        ? "lime"
-                        : status === "error"
-                          ? "danger"
-                          : "paper"
-                    }
-                  >
-                    status · {status}
-                  </Pill>
-                </div>
-                {log && (
-                  <pre className="max-h-60 overflow-auto whitespace-pre-wrap rounded-[14px] border border-ink/20 bg-ink px-4 py-3 font-mono text-[12px] leading-relaxed text-lime">
-                    {log}
-                  </pre>
-                )}
+                  status · {status}
+                </Pill>
               </div>
-            )}
-          </div>
-        </Card>
+              {log && (
+                <pre className="max-h-60 overflow-auto whitespace-pre-wrap rounded-[14px] border border-[#191A23] bg-[#191A23] px-5 py-4 font-mono text-sm leading-relaxed text-[#B9FF66]">
+                  {log}
+                </pre>
+              )}
+            </div>
+          )}
+        </div>
 
-        <Card variant="lime" hover={false}>
-          <div className="flex flex-col gap-4">
-            <CardTitle className="text-[22px]">Before you publish</CardTitle>
-            <ul className="flex flex-col gap-3 text-[14px] text-ink/80">
-              <Hint>
-                The asset is escrowed when you create the auction. Approve
-                the auction contract for at least <em>assetAmount</em>.
-              </Hint>
-              <Hint>
-                Reserve is the minimum revealed bid the contract will accept
-                at settle().
-              </Hint>
-              <Hint>
-                Commit window should be longer than the slowest expected
-                proof generation. 1 hour is safe.
-              </Hint>
-              <Hint>
-                KYC is mandatory. Use the dev tools page to self-KYC on
-                testnet.
-              </Hint>
-            </ul>
-          </div>
-        </Card>
+        {/* Hints card — lime */}
+        <div className="rounded-[45px] border border-[#191A23] bg-[#B9FF66] p-8 md:p-10">
+          <h2 className="mb-6 text-[30px] font-medium leading-[1.2] text-[#191A23]">
+            Before you publish
+          </h2>
+          <ul className="flex flex-col gap-4 text-base leading-relaxed text-[#191A23]/85">
+            <Hint>
+              The asset is escrowed when you create the auction. Approve the
+              auction contract for at least <em>assetAmount</em>.
+            </Hint>
+            <Hint>
+              Reserve is the minimum revealed bid the contract will accept
+              at settle().
+            </Hint>
+            <Hint>
+              Commit window should be longer than the slowest expected proof
+              generation. 1 hour is safe.
+            </Hint>
+            <Hint>
+              KYC is mandatory. Use the dev tools page to self-KYC on
+              testnet.
+            </Hint>
+          </ul>
+        </div>
       </div>
     </div>
   );
@@ -177,8 +182,8 @@ export default function CreatePage() {
 
 function Hint({ children }: { children: React.ReactNode }) {
   return (
-    <li className="flex gap-2">
-      <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-ink" />
+    <li className="flex gap-3">
+      <span className="mt-[9px] h-2 w-2 shrink-0 rounded-full bg-[#191A23]" />
       <span>{children}</span>
     </li>
   );

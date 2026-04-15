@@ -1,17 +1,10 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import { WalletProvider } from "@/lib/wallet-context";
 import { TestSignerBanner } from "@/components/TestSignerBanner";
 import { TopNav } from "@/components/chrome/top-nav";
 import { Footer } from "@/components/chrome/footer";
 import "./globals.css";
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-space-grotesk",
-  weight: ["400", "500", "600", "700"],
-});
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,7 +23,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "SealedHash — Sealed-Bid Auctions on HashKey Chain",
   description:
-    "Private sealed-bid auctions with solvency proofs. Commit, reveal, settle — bids stay hidden until the window closes.",
+    "Sealed-bid auctions with on-chain solvency proofs. Commit, prove, reveal, settle — bids stay hidden until the window closes.",
 };
 
 export default function RootLayout({
@@ -39,10 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable}`}
-    >
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body>
         <WalletProvider>
           <TestSignerBanner />

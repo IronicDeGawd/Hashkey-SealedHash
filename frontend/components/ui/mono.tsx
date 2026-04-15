@@ -9,12 +9,7 @@ export function Mono({
   className?: string;
 }) {
   return (
-    <span
-      className={cn(
-        "font-mono text-[13px] tracking-tight text-ink",
-        className
-      )}
-    >
+    <span className={cn("font-mono text-sm text-[#191A23]", className)}>
       {children}
     </span>
   );

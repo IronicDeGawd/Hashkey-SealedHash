@@ -9,13 +9,14 @@ export function TestSignerBanner() {
   return (
     <div
       role="alert"
-      className="sticky top-0 z-[60] w-full border-b-2 border-ink bg-lime px-4 py-2 text-center font-mono text-[11px] uppercase tracking-[0.14em] text-ink"
+      className="w-full border-b border-[#191A23] bg-[#B9FF66] px-5 py-3 text-center text-sm font-medium text-[#191A23] md:px-16"
     >
-      <span className="mr-2 inline-block rounded-[6px] border border-ink bg-ink px-1.5 py-0.5 text-[10px] text-lime">
-        test signer
+      <span className="mr-3 inline-block rounded-[7px] bg-[#191A23] px-2 py-1 text-xs text-[#B9FF66]">
+        TEST SIGNER
       </span>
-      active — writes are signed by a local key from .env.local (
-      {shortAddress(address)}). never enable this in production.
+      active — writes signed by a local key from .env.local (
+      <span className="font-mono">{shortAddress(address)}</span>). never
+      enable this in production.
     </div>
   );
 }

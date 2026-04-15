@@ -12,7 +12,7 @@ import { randomNonce, computeCommitment, saveNonce } from "@/lib/commitment";
 import { hashkeyTestnet } from "@/lib/chain";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
-import { Pill } from "@/components/ui/pill";
+import { Pill } from "@/components/ui/heading";
 
 type Props = {
   auctionId: bigint;
@@ -82,7 +82,6 @@ export function CommitForm({
     }
 
     try {
-      // 1. KYC
       if (kycOk === false) {
         setStep("kyc");
         setLog((l) => l + "self-kyc in mock sbt...\n");
@@ -90,7 +89,6 @@ export function CommitForm({
         setKycOk(true);
       }
 
-      // 2. Approve if needed
       if (allowance === null || allowance < escrowBig) {
         setStep("approve");
         setLog((l) => l + `approving ${escrow} of payment token...\n`);
@@ -98,7 +96,6 @@ export function CommitForm({
         setAllowance(escrowBig);
       }
 
-      // 3. Nonce + commitment + persist BEFORE any network call that could lose state
       const nonce = randomNonce();
       const commitment = computeCommitment(bidBig, nonce);
       saveNonce({
@@ -115,7 +112,6 @@ export function CommitForm({
           `nonce + commitment saved to localStorage\ncommitment=${commitment}\n`,
       );
 
-      // 4. Generate proof
       setStep("proving");
       setLog((l) => l + "generating zk proof (client-side)...\n");
       const t0 = performance.now();
@@ -131,7 +127,6 @@ export function CommitForm({
           `proof ok in ${Math.round(t1 - t0)}ms, ${proof.length} bytes, public inputs ${publicInputs.join(", ")}\n`,
       );
 
-      // 5. Commit tx
       setStep("committing");
       setLog((l) => l + "sending commitBid tx...\n");
       const hash = await commitBid(auctionId, escrowBig, commitment, proof);
@@ -164,18 +159,18 @@ export function CommitForm({
         : "Generate proof + commit";
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-2">
-        <Pill tone={kycOk ? "lime" : kycOk === false ? "danger" : "paper"}>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-wrap items-center gap-3">
+        <Pill variant={kycOk ? "green" : "white"}>
           kyc · {kycOk === null ? "?" : kycOk ? "ok" : "not approved"}
         </Pill>
-        <Pill tone="paper">
+        <Pill variant="white">
           allowance · {allowance === null ? "?" : allowance.toString()}
         </Pill>
-        <Pill tone="white">reserve ≥ {reserve.toString()}</Pill>
+        <Pill variant="white">reserve ≥ {reserve.toString()}</Pill>
       </div>
 
-      <div className="grid gap-4 md:max-w-md">
+      <div className="grid max-w-xl gap-5">
         <Field
           label="Bid · private · raw units"
           value={bid}
@@ -193,8 +188,8 @@ export function CommitForm({
           hint={`Payment token uses ${paymentDecimals} decimals. Raw integers only.`}
         />
         <Button
-          variant="accent"
-          size="lg"
+          variant="tertiary"
+          size="default"
           onClick={onCommit}
           disabled={working}
         >
@@ -203,7 +198,7 @@ export function CommitForm({
       </div>
 
       {log && (
-        <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-[14px] border border-ink/20 bg-ink px-4 py-3 font-mono text-[12px] leading-relaxed text-lime">
+        <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-[14px] border border-[#191A23] bg-[#191A23] px-5 py-4 font-mono text-sm leading-relaxed text-[#B9FF66]">
           {log}
         </pre>
       )}

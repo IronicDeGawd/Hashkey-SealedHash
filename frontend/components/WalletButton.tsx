@@ -4,7 +4,7 @@ import { useWallet } from "@/lib/wallet-context";
 import { ensureHashkeyTestnet } from "@/lib/chain";
 import { Button } from "@/components/ui/button";
 import { Address } from "@/components/ui/address";
-import { Pill } from "@/components/ui/pill";
+import { Pill } from "@/components/ui/heading";
 
 export function WalletButton() {
   const { address, status, error, connect, disconnect, isRightChain, hasWallet } =
@@ -13,10 +13,10 @@ export function WalletButton() {
   if (!hasWallet) {
     return (
       <div className="flex flex-col items-end gap-1">
-        <Button variant="outline" size="sm" disabled>
+        <Button variant="secondary" size="sm" disabled>
           no wallet
         </Button>
-        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink/50">
+        <span className="text-xs text-[#191A23]/60">
           install okx or metamask
         </span>
       </div>
@@ -25,7 +25,7 @@ export function WalletButton() {
 
   if (status === "connecting") {
     return (
-      <Button variant="outline" size="sm" disabled>
+      <Button variant="secondary" size="sm" disabled>
         connecting…
       </Button>
     );
@@ -33,10 +33,10 @@ export function WalletButton() {
 
   if (address) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {!isRightChain && (
           <Button
-            variant="accent"
+            variant="tertiary"
             size="sm"
             onClick={() => ensureHashkeyTestnet()}
           >
@@ -44,12 +44,12 @@ export function WalletButton() {
           </Button>
         )}
         {isRightChain && (
-          <Pill tone="lime" className="hidden md:inline-flex">
-            HashKey Testnet
-          </Pill>
+          <span className="hidden md:inline-block">
+            <Pill variant="green">HashKey Testnet</Pill>
+          </span>
         )}
         <Address value={address} copyable />
-        <Button variant="ghost" size="sm" onClick={disconnect}>
+        <Button variant="secondary" size="sm" onClick={disconnect}>
           disconnect
         </Button>
       </div>
@@ -62,9 +62,7 @@ export function WalletButton() {
         connect wallet
       </Button>
       {error && (
-        <span className="max-w-[220px] font-mono text-[10px] text-danger">
-          {error}
-        </span>
+        <span className="max-w-[220px] text-xs text-[#8B0000]">{error}</span>
       )}
     </div>
   );

@@ -8,7 +8,7 @@ import { hashkeyTestnet } from "@/lib/chain";
 import { addresses } from "@/lib/addresses";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
-import { Pill } from "@/components/ui/pill";
+import { Pill } from "@/components/ui/heading";
 
 type Props = {
   auctionId: bigint;
@@ -67,17 +67,15 @@ export function RevealForm({ auctionId, onRevealed }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-2">
-        <Pill tone={autoLoaded ? "lime" : "paper"}>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-wrap items-center gap-3">
+        <Pill variant={autoLoaded ? "green" : "white"}>
           {autoLoaded ? "loaded from localStorage" : "no saved nonce"}
         </Pill>
-        <Pill tone="white">
-          key · hashkey-sealed-bid-v1
-        </Pill>
+        <Pill variant="white">key · hashkey-sealed-bid-v1</Pill>
       </div>
 
-      <div className="grid gap-4 md:max-w-xl">
+      <div className="grid max-w-xl gap-5">
         <Field
           label="Bid · raw units"
           value={bid}
@@ -92,8 +90,8 @@ export function RevealForm({ auctionId, onRevealed }: Props) {
           mono
         />
         <Button
-          variant="accent"
-          size="lg"
+          variant="tertiary"
+          size="default"
           onClick={onReveal}
           disabled={status === "revealing" || !bid || !nonce}
         >
@@ -102,7 +100,7 @@ export function RevealForm({ auctionId, onRevealed }: Props) {
       </div>
 
       {log && (
-        <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-[14px] border border-ink/20 bg-ink px-4 py-3 font-mono text-[12px] leading-relaxed text-lime">
+        <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-[14px] border border-[#191A23] bg-[#191A23] px-5 py-4 font-mono text-sm leading-relaxed text-[#B9FF66]">
           {log}
         </pre>
       )}

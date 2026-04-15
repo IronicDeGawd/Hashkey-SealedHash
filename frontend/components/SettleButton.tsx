@@ -34,22 +34,22 @@ export function SettleButton({ auctionId, onSettled }: Props) {
   }
 
   return (
-    <div className="flex flex-col items-start gap-4">
-      <p className="text-[14px] text-current/70">
-        Settlement is permissionless. Any address can call settle once the
+    <div className="flex flex-col items-start gap-6">
+      <p className="text-base leading-relaxed text-current/80">
+        Settlement is permissionless. Any address can call settle() once the
         reveal window closes — the winner gets the asset, the seller gets
-        paid.
+        paid, losers refund separately.
       </p>
       <Button
-        variant="accent"
-        size="md"
+        variant="tertiary"
+        size="default"
         onClick={onClick}
         disabled={status === "working"}
       >
         {status === "working" ? "working…" : "Settle auction"}
       </Button>
       {log && (
-        <pre className="w-full max-w-xl max-h-48 overflow-auto whitespace-pre-wrap rounded-[14px] border border-white/20 bg-black/30 px-4 py-3 font-mono text-[12px] leading-relaxed text-lime">
+        <pre className="w-full max-w-xl max-h-48 overflow-auto whitespace-pre-wrap rounded-[14px] border border-white/20 bg-black/40 px-5 py-4 font-mono text-sm leading-relaxed text-[#B9FF66]">
           {log}
         </pre>
       )}

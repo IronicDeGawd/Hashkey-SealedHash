@@ -1,19 +1,6 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink: #191A23;
-  --color-lime: #B9FF66;
-  --color-paper: #F3F3F3;
-  --color-white: #FFFFFF;
-  --color-danger: #E63946;
-  --color-success: #10B981;
-  --color-muted: #6B6C75;
-
-  --radius-sm: 7px;
-  --radius-md: 14px;
-  --radius-lg: 45px;
-
-  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
@@ -28,13 +15,10 @@
   box-sizing: border-box;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-}
-
 html,
 body {
+  margin: 0;
+  padding: 0;
   max-width: 100vw;
   overflow-x: hidden;
 }
@@ -47,10 +31,9 @@ body {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--color-white);
-  color: var(--color-ink);
+  background: #ffffff;
+  color: #191A23;
   font-family: var(--font-sans);
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -65,8 +48,8 @@ button {
 }
 
 ::selection {
-  background: var(--color-lime);
-  color: var(--color-ink);
+  background: #B9FF66;
+  color: #191A23;
 }
 
 @media (prefers-reduced-motion: reduce) {

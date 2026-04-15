@@ -41,20 +41,20 @@ export function RefundButton({
   }
 
   return (
-    <div className="flex flex-col items-start gap-4">
+    <div className="flex flex-col items-start gap-6">
       {reason && (
-        <p className="text-[14px] text-ink/70">{reason}</p>
+        <p className="text-base leading-relaxed text-[#191A23]/80">{reason}</p>
       )}
       <Button
         variant="primary"
-        size="md"
+        size="default"
         onClick={onClick}
         disabled={disabled || status === "working"}
       >
         {status === "working" ? "working…" : "Refund escrow"}
       </Button>
       {log && (
-        <pre className="w-full max-w-xl max-h-48 overflow-auto whitespace-pre-wrap rounded-[14px] border border-ink/20 bg-ink px-4 py-3 font-mono text-[12px] leading-relaxed text-lime">
+        <pre className="w-full max-w-xl max-h-48 overflow-auto whitespace-pre-wrap rounded-[14px] border border-[#191A23] bg-[#191A23] px-5 py-4 font-mono text-sm leading-relaxed text-[#B9FF66]">
           {log}
         </pre>
       )}

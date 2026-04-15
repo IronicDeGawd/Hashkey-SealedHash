@@ -2,12 +2,9 @@
 
 import * as React from "react";
 import { cn } from "@/lib/cn";
+import { truncateAddress } from "@/lib/truncate";
 
-export function truncateAddress(addr?: string | null, chars = 4): string {
-  if (!addr) return "";
-  if (addr.length <= chars * 2 + 2) return addr;
-  return `${addr.slice(0, 2 + chars)}…${addr.slice(-chars)}`;
-}
+export { truncateAddress };
 
 type AddressProps = {
   value?: string | null;
@@ -27,7 +24,16 @@ export function Address({
   const [copied, setCopied] = React.useState(false);
 
   if (!value) {
-    return <span className={cn("font-mono text-[13px] text-ink/50", className)}>—</span>;
+    return (
+      <span
+        className={cn(
+          "font-mono text-sm text-[#191A23]/50",
+          className
+        )}
+      >
+        —
+      </span>
+    );
   }
 
   const label = truncateAddress(value, chars);
@@ -46,16 +52,18 @@ export function Address({
 
   const content = (
     <>
-      <span className="font-mono text-[13px] tracking-tight">{label}</span>
+      <span className="font-mono text-sm tracking-tight text-[#191A23]">
+        {label}
+      </span>
       {copyable && (
         <button
           type="button"
           onClick={handleCopy}
           aria-label="Copy address"
-          className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-[6px] border border-ink/20 text-ink/60 transition-colors hover:border-ink hover:bg-lime hover:text-ink"
+          className="ml-1 inline-flex h-6 w-6 items-center justify-center rounded-[7px] border border-[#191A23]/30 text-[#191A23]/60 transition-colors hover:border-[#191A23] hover:bg-[#B9FF66] hover:text-[#191A23]"
         >
           {copied ? (
-            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
               <path
                 d="M3 8.5L6.5 12L13 4.5"
                 stroke="currentColor"
@@ -65,7 +73,7 @@ export function Address({
               />
             </svg>
           ) : (
-            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
               <rect
                 x="4"
                 y="4"
@@ -95,7 +103,7 @@ export function Address({
         target="_blank"
         rel="noreferrer"
         className={cn(
-          "inline-flex items-center gap-1 rounded-[7px] border border-ink/15 bg-white px-2 py-1 transition-colors hover:border-ink hover:bg-paper",
+          "inline-flex items-center gap-2 rounded-[10px] border border-[#191A23]/20 bg-white px-3 py-1.5 transition-colors hover:border-[#191A23] hover:bg-[#F3F3F3]",
           className
         )}
       >
@@ -107,7 +115,7 @@ export function Address({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-[7px] border border-ink/15 bg-white px-2 py-1",
+        "inline-flex items-center gap-2 rounded-[10px] border border-[#191A23]/20 bg-white px-3 py-1.5",
         className
       )}
     >

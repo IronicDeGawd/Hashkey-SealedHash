@@ -1,91 +1,103 @@
 "use client";
 
-import * as React from "react";
-import { SectionHeading } from "@/components/ui/heading";
+import { useState } from "react";
 import { PlusIcon } from "@/components/ui/plus-icon";
 import { cn } from "@/lib/cn";
 
 const steps = [
   {
-    n: "01",
+    number: "01",
     title: "Seller creates the auction",
-    body: "Seller escrows the RWA token, sets a minimum bid, pick a commit and reveal window. The contract enforces EIP-170 bytecode limits and KYC-SBT level 1 for every participant.",
+    description:
+      "The seller escrows an RWA token into SealedBidAuction, sets a minimum bid and a commit/reveal window. Auction creation is gated on KYC SBT level 1 and enforces EIP-170 bytecode limits. A new auctionId is emitted on-chain.",
   },
   {
-    n: "02",
+    number: "02",
     title: "Bidder proves solvency in the browser",
-    body: "Bidder approves an mUSDT escrow and generates a Noir UltraHonk proof client-side — 18.8s cold, sub-second warm. The circuit asserts min ≤ amount ≤ escrow. Only the commitment hash and proof leave the tab.",
+    description:
+      "The bidder approves an mUSDT escrow and generates a Noir UltraHonk range proof client-side. The circuit asserts min ≤ amount ≤ escrow. Only the commitment hash and the proof leave the tab — the bid amount never does.",
   },
   {
-    n: "03",
-    title: "Commit locks the escrow on-chain",
-    body: "A single transaction deposits the escrow, verifies the proof on-chain via HonkVerifier, and stores the commitmentHash. The nonce is persisted in localStorage under a versioned key so the bidder can always reveal later.",
+    number: "03",
+    title: "Commit locks escrow on-chain",
+    description:
+      "A single transaction deposits the escrow, verifies the proof on-chain via HonkVerifier, and stores the commitmentHash in contract state. The nonce is persisted in localStorage under a versioned key so the bidder can always reveal later.",
   },
   {
-    n: "04",
+    number: "04",
     title: "Reveal window opens",
-    body: "After the commit window closes, bidders return and reveal (amount, nonce). The contract recomputes hash(amount, nonce) and confirms it matches the sealed commitment. Invalid reveals are rejected.",
+    description:
+      "Once the commit window closes, bidders return and reveal (amount, nonce). The contract recomputes hash(amount, nonce) and confirms it matches the sealed commitment. Invalid reveals are rejected; valid reveals update the highest-bid state.",
   },
   {
-    n: "05",
+    number: "05",
     title: "Anyone settles the auction",
-    body: "Settlement is permissionless. Once the reveal window closes, any address can call settle() — the highest valid reveal wins, the RWA transfers to the winner, the seller is paid from escrow.",
+    description:
+      "Settlement is permissionless. After the reveal window closes, any address can call settle() — the highest valid reveal wins, the RWA transfers to the winner, the seller is paid from escrow, and the winner's escrow surplus is refunded atomically.",
   },
   {
-    n: "06",
+    number: "06",
     title: "Losers refund, winner keeps the asset",
-    body: "Non-winning escrows are refundable with a single transaction. A winner who never reveals forfeits their escrow to the seller. The KYC SBT is non-transferable so sybils cannot game the system.",
+    description:
+      "Non-winning escrows are refundable with a single refund() call. A winner who never reveals forfeits their escrow to the seller. Because the KYC SBT is non-transferable, sybils can't game the system across auctions.",
   },
 ];
 
 export function HowItWorks() {
-  const [open, setOpen] = React.useState<number>(1);
+  const [open, setOpen] = useState<number>(0);
+
   return (
     <section
       id="how-it-works"
-      className="mx-auto max-w-[1440px] px-5 py-20 md:px-10 md:py-28"
+      className="mx-auto max-w-[1440px] px-5 py-16 md:px-16 md:py-20"
     >
-      <SectionHeading
-        label="How it works"
-        title="Commit. Prove. Reveal. Settle."
-        description="Six steps from posting an auction to paying out. Everything the bidder sees runs in the browser."
-      />
-      <div className="mt-14 flex flex-col gap-5">
-        {steps.map((s, i) => {
+      <div className="mb-14 flex items-start gap-10">
+        <div className="flex flex-col gap-5">
+          <span className="inline-block w-fit rounded-[7px] bg-[#B9FF66] px-[7px] py-[5px] text-xl font-medium text-[#191A23]">
+            How it works
+          </span>
+          <h2 className="text-[32px] font-medium leading-[1.2] text-[#191A23] md:text-[40px]">
+            Commit. Prove. Reveal. Settle.
+          </h2>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        {steps.map((step, i) => {
           const isOpen = open === i;
           return (
-            <button
-              key={s.n}
-              type="button"
-              onClick={() => setOpen(isOpen ? -1 : i)}
-              aria-expanded={isOpen}
+            <div
+              key={step.number}
               className={cn(
-                "group rounded-[45px] border border-ink px-6 py-6 text-left shadow-[0_5px_0_0_theme(colors.ink)] transition-colors md:px-12 md:py-8",
-                isOpen ? "bg-lime" : "bg-paper hover:bg-lime/30"
+                "rounded-[45px] border border-[#191A23] px-6 py-6 transition-colors md:px-12 md:py-8",
+                isOpen ? "bg-[#B9FF66]" : "bg-[#F3F3F3]"
               )}
             >
-              <div className="flex items-center gap-4 md:gap-8">
-                <span className="font-display text-[36px] font-semibold leading-none tracking-tight text-ink md:text-[52px]">
-                  {s.n}
-                </span>
-                <span className="flex-1 font-display text-[20px] font-semibold leading-tight tracking-tight text-ink md:text-[28px]">
-                  {s.title}
-                </span>
-                <PlusIcon open={isOpen} size={48} />
-              </div>
-              <div
-                className={cn(
-                  "grid transition-[grid-template-rows] duration-200 ease-out",
-                  isOpen ? "grid-rows-[1fr] pt-6" : "grid-rows-[0fr]"
-                )}
+              <button
+                className="flex w-full items-center justify-between text-left"
+                onClick={() => setOpen(isOpen ? -1 : i)}
+                aria-expanded={isOpen}
               >
-                <div className="overflow-hidden">
-                  <div className="border-t border-ink/20 pt-5 text-[15px] leading-relaxed text-ink/80 md:pl-[72px]">
-                    {s.body}
-                  </div>
+                <div className="flex items-center gap-4 md:gap-6">
+                  <span className="text-[36px] font-medium leading-none text-[#191A23] md:text-[60px]">
+                    {step.number}
+                  </span>
+                  <span className="text-lg font-medium text-[#191A23] md:text-2xl">
+                    {step.title}
+                  </span>
                 </div>
-              </div>
-            </button>
+                <PlusIcon icon={isOpen ? "minus" : "plus"} size={58} />
+              </button>
+
+              {isOpen && (
+                <>
+                  <hr className="my-6 border-[#191A23]/30" />
+                  <p className="text-base leading-relaxed text-[#191A23]/80">
+                    {step.description}
+                  </p>
+                </>
+              )}
+            </div>
           );
         })}
       </div>

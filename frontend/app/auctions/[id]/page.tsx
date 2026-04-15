@@ -23,10 +23,9 @@ import {
 } from "@/lib/format";
 import { CommitForm } from "@/components/CommitForm";
 import { SettleButton } from "@/components/SettleButton";
-import { Card, CardTitle } from "@/components/ui/card";
-import { Pill } from "@/components/ui/pill";
-import { Address } from "@/components/ui/address";
+import { Pill } from "@/components/ui/heading";
 import { LinkButton } from "@/components/ui/button";
+import { truncateAddress } from "@/lib/truncate";
 
 type DetailData = {
   auction: Auction;
@@ -37,17 +36,10 @@ type DetailData = {
   kyc: KycInfo | null;
 };
 
-const statusTone = (s: AuctionStatus) => {
-  switch (s) {
-    case 0:
-      return "lime" as const;
-    case 1:
-      return "paper" as const;
-    case 2:
-      return "white" as const;
-    default:
-      return "ink" as const;
-  }
+const statusPillVariant = (s: AuctionStatus): "green" | "white" | "black" => {
+  if (s === 0) return "green";
+  if (s === 1) return "white";
+  return "black";
 };
 
 const ZERO =
@@ -107,239 +99,228 @@ export default function AuctionDetailPage() {
   const refresh = () => setReloadKey((n) => n + 1);
 
   return (
-    <div className="mx-auto max-w-[1200px] px-5 py-12 md:px-10 md:py-16">
-      <nav className="mb-6 flex items-center gap-3 font-mono text-[12px] uppercase tracking-[0.14em] text-ink/50">
-        <Link href="/auctions" className="hover:text-ink">
+    <div className="mx-auto max-w-[1440px] px-5 py-12 md:px-16 md:py-20">
+      <nav className="mb-8 flex items-center gap-4 text-sm text-[#191A23]/60">
+        <Link href="/auctions" className="hover:text-[#191A23]">
           ← All auctions
         </Link>
       </nav>
 
       {error && (
-        <div className="rounded-[14px] border border-danger bg-danger/5 px-5 py-4 font-mono text-[13px] text-danger">
+        <div className="rounded-[14px] border border-[#8B0000] bg-[#FFE5E5] px-6 py-4 text-base text-[#8B0000]">
           error: {error}
         </div>
       )}
 
       {!data && !error && (
-        <div className="h-80 animate-pulse rounded-[45px] border border-ink/20 bg-paper/60" />
+        <div className="h-80 animate-pulse rounded-[45px] border border-[#191A23]/20 bg-[#F3F3F3]/60" />
       )}
 
       {data && (
         <>
-          <header className="mb-10 flex flex-col gap-4">
+          {/* Header */}
+          <header className="mb-14 flex flex-col gap-5">
             <div className="flex items-center gap-3">
-              <Pill tone={statusTone(data.status)}>
+              <Pill variant={statusPillVariant(data.status)}>
                 {statusLabel(data.status)}
               </Pill>
-              <span className="font-mono text-[12px] text-ink/40">
+              <span className="font-mono text-sm text-[#191A23]/40">
                 Auction #{idStr}
               </span>
             </div>
-            <h1 className="font-display text-[40px] font-semibold leading-[1.05] tracking-tight text-ink md:text-[56px]">
+            <h1 className="text-[40px] font-medium leading-[1.05] text-[#191A23] md:text-[60px] md:leading-[1.1]">
               {formatTokenAmount(
                 data.auction.assetAmount,
                 data.asset.decimals,
               )}{" "}
               {data.asset.symbol}
             </h1>
-            <p className="text-[15px] text-ink/60">
-              Seller <Address value={data.auction.seller} copyable={false} />{" "}
-              · Paid in {data.payment.symbol}
+            <p className="text-lg text-[#191A23]/70">
+              Seller {truncateAddress(data.auction.seller, 6)} · paid in{" "}
+              {data.payment.symbol}
             </p>
           </header>
 
-          <div className="grid gap-8 md:grid-cols-[1.2fr_1fr]">
-            <Card variant="paper" hover={false}>
-              <div className="flex flex-col gap-5">
-                <CardTitle>Summary</CardTitle>
-                <dl className="grid gap-4 text-[14px] md:grid-cols-2">
-                  <Meta
-                    label="Asset"
-                    value={`${formatTokenAmount(
-                      data.auction.assetAmount,
-                      data.asset.decimals,
-                    )} ${data.asset.symbol}`}
-                    sub={shortAddress(data.asset.address)}
-                  />
-                  <Meta
-                    label="Payment token"
-                    value={data.payment.symbol}
-                    sub={shortAddress(data.payment.address)}
-                  />
-                  <Meta
-                    label="Reserve"
-                    value={`${formatTokenAmount(
-                      data.auction.reserve,
-                      data.payment.decimals,
-                    )} ${data.payment.symbol}`}
-                  />
-                  <Meta
-                    label="Highest revealed bid"
-                    value={
-                      data.auction.highestBid > 0n
-                        ? `${formatTokenAmount(
-                            data.auction.highestBid,
-                            data.payment.decimals,
-                          )} ${data.payment.symbol}`
-                        : "—"
-                    }
-                    sub={
-                      data.auction.highestBid > 0n
-                        ? `by ${shortAddress(data.auction.highestBidder)}`
-                        : undefined
-                    }
-                  />
-                  <Meta
-                    label="Commit deadline"
-                    value={countdown(data.auction.commitDeadline)}
-                    sub={formatUnixSeconds(data.auction.commitDeadline)}
-                  />
-                  <Meta
-                    label="Reveal deadline"
-                    value={countdown(data.auction.revealDeadline)}
-                    sub={formatUnixSeconds(data.auction.revealDeadline)}
-                  />
-                </dl>
-              </div>
-            </Card>
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-[1.3fr_1fr] md:gap-10">
+            {/* Summary — paper card */}
+            <div className="rounded-[45px] border border-[#191A23] bg-[#F3F3F3] p-8 md:p-10">
+              <h2 className="mb-8 text-[30px] font-medium leading-[1.2] text-[#191A23]">
+                Summary
+              </h2>
+              <dl className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <Meta
+                  label="Asset"
+                  value={`${formatTokenAmount(
+                    data.auction.assetAmount,
+                    data.asset.decimals,
+                  )} ${data.asset.symbol}`}
+                  sub={shortAddress(data.asset.address)}
+                />
+                <Meta
+                  label="Payment token"
+                  value={data.payment.symbol}
+                  sub={shortAddress(data.payment.address)}
+                />
+                <Meta
+                  label="Reserve"
+                  value={`${formatTokenAmount(
+                    data.auction.reserve,
+                    data.payment.decimals,
+                  )} ${data.payment.symbol}`}
+                />
+                <Meta
+                  label="Highest revealed bid"
+                  value={
+                    data.auction.highestBid > 0n
+                      ? `${formatTokenAmount(
+                          data.auction.highestBid,
+                          data.payment.decimals,
+                        )} ${data.payment.symbol}`
+                      : "—"
+                  }
+                  sub={
+                    data.auction.highestBid > 0n
+                      ? `by ${shortAddress(data.auction.highestBidder)}`
+                      : undefined
+                  }
+                />
+                <Meta
+                  label="Commit deadline"
+                  value={countdown(data.auction.commitDeadline)}
+                  sub={formatUnixSeconds(data.auction.commitDeadline)}
+                />
+                <Meta
+                  label="Reveal deadline"
+                  value={countdown(data.auction.revealDeadline)}
+                  sub={formatUnixSeconds(data.auction.revealDeadline)}
+                />
+              </dl>
+            </div>
 
-            <Card variant="white" hover={false}>
-              <div className="flex flex-col gap-5">
-                <CardTitle>Your position</CardTitle>
-                {!address && (
-                  <p className="text-[14px] text-ink/60">
-                    Connect a wallet to see your commitment and KYC.
-                  </p>
-                )}
-                {address && data.kyc && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Pill tone={data.kyc.isValid ? "lime" : "danger"}>
-                      KYC · {data.kyc.isValid ? `level ${data.kyc.level}` : "not approved"}
-                    </Pill>
-                    {!data.kyc.isValid && (
-                      <Link
-                        href="/dev"
-                        className="font-mono text-[12px] text-ink/60 underline hover:text-ink"
-                      >
-                        self-KYC in dev tools →
-                      </Link>
-                    )}
-                  </div>
-                )}
-                {address &&
-                  data.commitment &&
-                  data.commitment.commitment !== ZERO && (
-                    <div className="flex flex-col gap-3">
-                      <p className="text-[14px] text-ink/70">
-                        You have committed on this auction.
-                      </p>
-                      <dl className="grid gap-2 rounded-[14px] border border-ink/10 bg-paper/60 p-4 text-[13px]">
-                        <div className="flex items-center justify-between">
-                          <dt className="font-mono uppercase tracking-[0.12em] text-ink/50">
-                            escrow
-                          </dt>
-                          <dd className="font-mono text-ink">
-                            {formatTokenAmount(
-                              data.commitment.escrow,
-                              data.payment.decimals,
-                            )}{" "}
-                            {data.payment.symbol}
-                          </dd>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <dt className="font-mono uppercase tracking-[0.12em] text-ink/50">
-                            revealed
-                          </dt>
-                          <dd className="font-mono text-ink">
-                            {String(data.commitment.revealed)}
-                          </dd>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <dt className="font-mono uppercase tracking-[0.12em] text-ink/50">
-                            refunded
-                          </dt>
-                          <dd className="font-mono text-ink">
-                            {String(data.commitment.refunded)}
-                          </dd>
-                        </div>
-                      </dl>
-                      <LinkButton
-                        href={`/auctions/${idStr}/mybid`}
-                        variant="primary"
-                        size="sm"
-                      >
-                        Open my bid page
-                      </LinkButton>
-                    </div>
+            {/* Your position — white card */}
+            <div className="rounded-[45px] border border-[#191A23] bg-white p-8 md:p-10">
+              <h2 className="mb-8 text-[30px] font-medium leading-[1.2] text-[#191A23]">
+                Your position
+              </h2>
+              {!address && (
+                <p className="text-base text-[#191A23]/70">
+                  Connect a wallet to see your commitment and KYC.
+                </p>
+              )}
+              {address && data.kyc && (
+                <div className="mb-5 flex flex-wrap items-center gap-3">
+                  <Pill variant={data.kyc.isValid ? "green" : "white"}>
+                    KYC · {data.kyc.isValid ? `level ${data.kyc.level}` : "not approved"}
+                  </Pill>
+                  {!data.kyc.isValid && (
+                    <Link
+                      href="/dev"
+                      className="text-sm text-[#191A23]/70 underline hover:text-[#191A23]"
+                    >
+                      self-KYC in dev tools →
+                    </Link>
                   )}
-                {address &&
-                  data.commitment &&
-                  data.commitment.commitment === ZERO && (
-                    <p className="text-[14px] text-ink/60">
-                      You have not committed to this auction yet.
-                    </p>
-                  )}
-              </div>
-            </Card>
-          </div>
-
-          <section className="mt-10">
-            <Card variant="ink" hover={false}>
-              <div className="flex flex-col gap-6 text-white">
-                <div className="flex items-center gap-3">
-                  <Pill tone="lime">Actions</Pill>
-                  <span className="font-mono text-[12px] text-white/50">
-                    phase · {statusLabel(data.status)}
-                  </span>
                 </div>
-                {!address && (
-                  <p className="text-[14px] text-white/70">
-                    Connect a wallet to bid.
-                  </p>
-                )}
-                {address && data.status === AuctionStatus.COMMIT && (
-                  <div className="rounded-[30px] bg-white p-6 text-ink md:p-8">
-                    <CommitForm
-                      auctionId={data.auction.id}
-                      reserve={data.auction.reserve}
-                      paymentToken={data.auction.paymentToken}
-                      paymentDecimals={data.payment.decimals}
-                    />
-                  </div>
-                )}
-                {address && data.status === AuctionStatus.REVEAL && (
-                  <div className="flex flex-col items-start gap-4">
-                    <p className="text-[14px] text-white/80">
-                      Reveal phase is open. Open your bid page to publish your
-                      (amount, nonce) pair.
+              )}
+              {address &&
+                data.commitment &&
+                data.commitment.commitment !== ZERO && (
+                  <div className="flex flex-col gap-5">
+                    <p className="text-base text-[#191A23]/70">
+                      You have committed on this auction.
                     </p>
+                    <dl className="flex flex-col gap-3 rounded-[14px] border border-[#191A23]/15 bg-[#F3F3F3] p-5 text-sm">
+                      <PositionRow
+                        label="escrow"
+                        value={`${formatTokenAmount(
+                          data.commitment.escrow,
+                          data.payment.decimals,
+                        )} ${data.payment.symbol}`}
+                      />
+                      <PositionRow
+                        label="revealed"
+                        value={String(data.commitment.revealed)}
+                      />
+                      <PositionRow
+                        label="refunded"
+                        value={String(data.commitment.refunded)}
+                      />
+                    </dl>
                     <LinkButton
                       href={`/auctions/${idStr}/mybid`}
-                      variant="accent"
-                      size="md"
+                      variant="primary"
+                      size="sm"
                     >
                       Open my bid page
                     </LinkButton>
                   </div>
                 )}
-                {data.status === AuctionStatus.SETTLEMENT && (
-                  <SettleButton
-                    auctionId={data.auction.id}
-                    onSettled={refresh}
-                  />
-                )}
-                {data.status === AuctionStatus.FINALIZED && (
-                  <p className="text-[14px] text-white/80">
-                    Auction finalized. Winner{" "}
-                    <Address
-                      value={data.auction.highestBidder}
-                      copyable={false}
-                    />
+              {address &&
+                data.commitment &&
+                data.commitment.commitment === ZERO && (
+                  <p className="text-base text-[#191A23]/70">
+                    You have not committed to this auction yet.
                   </p>
                 )}
+            </div>
+          </div>
+
+          {/* Actions — ink card */}
+          <div className="mt-10 rounded-[45px] border border-[#191A23] bg-[#191A23] p-8 md:p-12">
+            <div className="mb-8 flex items-center gap-3">
+              <span className="inline-block w-fit rounded-[7px] bg-[#B9FF66] px-[7px] py-[5px] text-base font-medium text-[#191A23]">
+                Actions
+              </span>
+              <span className="font-mono text-sm text-white/50">
+                phase · {statusLabel(data.status)}
+              </span>
+            </div>
+            {!address && (
+              <p className="text-base text-white/70">
+                Connect a wallet to bid.
+              </p>
+            )}
+            {address && data.status === AuctionStatus.COMMIT && (
+              <div className="rounded-[30px] bg-white p-6 text-[#191A23] md:p-10">
+                <CommitForm
+                  auctionId={data.auction.id}
+                  reserve={data.auction.reserve}
+                  paymentToken={data.auction.paymentToken}
+                  paymentDecimals={data.payment.decimals}
+                />
               </div>
-            </Card>
-          </section>
+            )}
+            {address && data.status === AuctionStatus.REVEAL && (
+              <div className="flex flex-col items-start gap-5">
+                <p className="text-base text-white/80">
+                  Reveal phase is open. Open your bid page to publish your
+                  (amount, nonce) pair.
+                </p>
+                <LinkButton
+                  href={`/auctions/${idStr}/mybid`}
+                  variant="tertiary"
+                >
+                  Open my bid page
+                </LinkButton>
+              </div>
+            )}
+            {data.status === AuctionStatus.SETTLEMENT && (
+              <div className="text-white">
+                <SettleButton
+                  auctionId={data.auction.id}
+                  onSettled={refresh}
+                />
+              </div>
+            )}
+            {data.status === AuctionStatus.FINALIZED && (
+              <p className="text-base text-white/80">
+                Auction finalized. Winner{" "}
+                <span className="font-mono text-[#B9FF66]">
+                  {truncateAddress(data.auction.highestBidder, 6)}
+                </span>
+              </p>
+            )}
+          </div>
         </>
       )}
     </div>
@@ -356,14 +337,27 @@ function Meta({
   sub?: string;
 }) {
   return (
-    <div className="flex flex-col gap-1">
-      <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink/50">
-        {label}
-      </dt>
-      <dd className="font-display text-[18px] font-medium text-ink">{value}</dd>
+    <div className="flex flex-col gap-1.5">
+      <dt className="text-sm font-medium text-[#191A23]/60">{label}</dt>
+      <dd className="text-[20px] font-medium text-[#191A23]">{value}</dd>
       {sub && (
-        <span className="font-mono text-[11px] text-ink/40">{sub}</span>
+        <span className="font-mono text-xs text-[#191A23]/40">{sub}</span>
       )}
+    </div>
+  );
+}
+
+function PositionRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <dt className="font-mono text-sm text-[#191A23]/50">{label}</dt>
+      <dd className="font-mono text-sm text-[#191A23]">{value}</dd>
     </div>
   );
 }

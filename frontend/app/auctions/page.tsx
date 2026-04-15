@@ -12,11 +12,9 @@ import {
 import { readErc20Metadata, type Erc20Metadata } from "@/lib/erc20";
 import { formatTokenAmount, countdown } from "@/lib/format";
 import type { Address } from "viem";
-import { SectionHeading } from "@/components/ui/heading";
-import { Card, CardTitle } from "@/components/ui/card";
-import { Pill } from "@/components/ui/pill";
-import { Address as AddressChip } from "@/components/ui/address";
 import { LinkButton } from "@/components/ui/button";
+import { Pill, SectionHeading } from "@/components/ui/heading";
+import { truncateAddress } from "@/lib/truncate";
 
 type Row = {
   auction: Auction;
@@ -25,18 +23,11 @@ type Row = {
   payment: Erc20Metadata;
 };
 
-const statusTone = (s: AuctionStatus) => {
-  // 0 commit, 1 reveal, 2 settlement, 3 finalized
-  switch (s) {
-    case 0:
-      return "lime" as const;
-    case 1:
-      return "paper" as const;
-    case 2:
-      return "white" as const;
-    default:
-      return "ink" as const;
-  }
+const statusPillVariant = (s: AuctionStatus): "green" | "white" | "black" => {
+  if (s === 0) return "green";
+  if (s === 1) return "white";
+  if (s === 2) return "black";
+  return "black";
 };
 
 export default function AuctionsPage() {
@@ -86,45 +77,41 @@ export default function AuctionsPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-[1440px] px-5 py-16 md:px-10 md:py-20">
-      <div className="flex flex-wrap items-end justify-between gap-6">
-        <SectionHeading
-          label="Live auctions"
-          title="Sealed bids, open to anyone."
-          description="Every auction below runs against the HashKey testnet contracts. Connect a wallet to commit a bid."
-        />
-        <LinkButton href="/create" variant="primary" size="md">
+    <div className="mx-auto max-w-[1440px] px-5 py-16 md:px-16 md:py-20">
+      <div className="mb-14 flex flex-col items-start justify-between gap-8 md:flex-row md:items-end">
+        <SectionHeading label="Live auctions" title="Sealed bids, open to anyone" />
+        <LinkButton href="/create" variant="primary" size="default">
           Create auction
         </LinkButton>
       </div>
 
       {error && (
-        <div className="mt-10 rounded-[14px] border border-danger bg-danger/5 px-5 py-4 font-mono text-[13px] text-danger">
+        <div className="rounded-[14px] border border-[#8B0000] bg-[#FFE5E5] px-6 py-4 text-base text-[#8B0000]">
           error: {error}
         </div>
       )}
 
       {rows === null && !error && (
-        <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="h-60 animate-pulse rounded-[45px] border border-ink/20 bg-paper/60"
+              className="h-72 animate-pulse rounded-[45px] border border-[#191A23]/20 bg-[#F3F3F3]/60"
             />
           ))}
         </div>
       )}
 
       {rows !== null && rows.length === 0 && (
-        <div className="mt-14 rounded-[45px] border border-dashed border-ink/30 bg-paper p-12 text-center">
-          <p className="font-display text-[22px] text-ink">
+        <div className="rounded-[45px] border border-dashed border-[#191A23]/30 bg-[#F3F3F3] p-12 text-center md:p-16">
+          <h3 className="text-[28px] font-medium text-[#191A23] md:text-[30px]">
             No auctions yet.
-          </p>
-          <p className="mt-2 text-[14px] text-ink/60">
+          </h3>
+          <p className="mt-3 text-base text-[#191A23]/60">
             Be the first — the seller form takes under a minute.
           </p>
-          <div className="mt-6 inline-flex">
-            <LinkButton href="/create" variant="accent" size="md">
+          <div className="mt-8 inline-flex">
+            <LinkButton href="/create" variant="tertiary">
               Create the first auction
             </LinkButton>
           </div>
@@ -132,7 +119,7 @@ export default function AuctionsPage() {
       )}
 
       {rows !== null && rows.length > 0 && (
-        <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
           {rows.map(({ auction, status, asset, payment }) => {
             const deadline =
               status === 0
@@ -140,69 +127,91 @@ export default function AuctionsPage() {
                 : status === 1
                 ? auction.revealDeadline
                 : 0n;
+            const tone = statusPillVariant(status);
             return (
-              <Card key={auction.id.toString()} variant="white" hover>
-                <div className="flex h-full flex-col gap-5">
-                  <div className="flex items-center justify-between">
-                    <Pill tone={statusTone(status)}>{statusLabel(status)}</Pill>
-                    <span className="font-mono text-[12px] text-ink/40">
-                      #{auction.id.toString()}
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink/50">
-                      Asset
-                    </span>
-                    <CardTitle>
-                      {formatTokenAmount(auction.assetAmount, asset.decimals)}{" "}
-                      {asset.symbol}
-                    </CardTitle>
-                  </div>
-                  <dl className="grid gap-3 border-t border-ink/10 pt-4 text-[13px]">
-                    <div className="flex items-center justify-between">
-                      <dt className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink/50">
-                        Reserve
-                      </dt>
-                      <dd className="font-mono text-ink">
-                        {formatTokenAmount(
-                          auction.reserve,
-                          payment.decimals,
-                        )}{" "}
-                        {payment.symbol}
-                      </dd>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <dt className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink/50">
-                        Seller
-                      </dt>
-                      <dd>
-                        <AddressChip value={auction.seller} copyable={false} />
-                      </dd>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <dt className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink/50">
-                        Deadline
-                      </dt>
-                      <dd className="font-mono text-ink">
-                        {deadline > 0n ? countdown(deadline) : "—"}
-                      </dd>
-                    </div>
-                  </dl>
-                  <div className="mt-auto pt-3">
-                    <Link
-                      href={`/auctions/${auction.id.toString()}`}
-                      className="inline-flex items-center gap-2 font-display text-[15px] font-medium text-ink underline decoration-ink/30 underline-offset-4 hover:decoration-ink"
-                    >
-                      Open auction
-                      <span aria-hidden>→</span>
-                    </Link>
-                  </div>
+              <Link
+                key={auction.id.toString()}
+                href={`/auctions/${auction.id.toString()}`}
+                className="group flex flex-col gap-6 rounded-[45px] border border-[#191A23] bg-[#F3F3F3] p-8 transition-colors hover:bg-white md:p-10"
+              >
+                <div className="flex items-center justify-between">
+                  <Pill variant={tone}>{statusLabel(status)}</Pill>
+                  <span className="font-mono text-sm text-[#191A23]/40">
+                    #{auction.id.toString()}
+                  </span>
                 </div>
-              </Card>
+
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-[#191A23]/60">
+                    Asset
+                  </span>
+                  <h3 className="text-[30px] font-medium leading-[1.1] text-[#191A23]">
+                    {formatTokenAmount(auction.assetAmount, asset.decimals)}{" "}
+                    {asset.symbol}
+                  </h3>
+                </div>
+
+                <dl className="grid grid-cols-1 gap-4 border-t border-[#191A23]/15 pt-5 text-sm md:grid-cols-2">
+                  <MetaRow label="Reserve">
+                    <span className="font-mono text-[#191A23]">
+                      {formatTokenAmount(auction.reserve, payment.decimals)}{" "}
+                      {payment.symbol}
+                    </span>
+                  </MetaRow>
+                  <MetaRow label="Deadline">
+                    <span className="font-mono text-[#191A23]">
+                      {deadline > 0n ? countdown(deadline) : "—"}
+                    </span>
+                  </MetaRow>
+                  <MetaRow label="Seller" className="md:col-span-2">
+                    <span className="font-mono text-[#191A23]">
+                      {truncateAddress(auction.seller, 6)}
+                    </span>
+                  </MetaRow>
+                </dl>
+
+                <span className="mt-auto inline-flex items-center gap-3 text-base font-medium text-[#191A23] group-hover:gap-4">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#191A23]">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      className="text-white"
+                    >
+                      <path
+                        d="M2 8h12M10 4l4 4-4 4"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  Open auction
+                </span>
+              </Link>
             );
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function MetaRow({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`flex items-center justify-between gap-4 ${className ?? ""}`}>
+      <dt className="text-[#191A23]/50">{label}</dt>
+      <dd>{children}</dd>
     </div>
   );
 }
