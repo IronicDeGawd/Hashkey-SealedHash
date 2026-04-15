@@ -1,6 +1,6 @@
 # SealedHash — EC2 deployment runbook
 
-Target: `ubuntu@ec2-13-127-147-110.ap-south-1.compute.amazonaws.com`
+Target: `ubuntu@<ec2-public-dns>`
 Public URL: `https://sealedhash.ironyaditya.xyz`
 Docker stack: Postgres 16 + Next.js 16 frontend + on-chain indexer, all behind the host Caddy.
 
