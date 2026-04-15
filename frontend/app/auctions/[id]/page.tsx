@@ -287,6 +287,7 @@ export default function AuctionDetailPage() {
                   reserve={data.auction.reserve}
                   paymentToken={data.auction.paymentToken}
                   paymentDecimals={data.payment.decimals}
+                  onCommitted={refresh}
                 />
               </div>
             )}

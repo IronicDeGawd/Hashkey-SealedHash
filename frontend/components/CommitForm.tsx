@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Address } from "viem";
 import { useWallet } from "@/lib/wallet-context";
 import { generateAuctionProof } from "@/lib/prove";
@@ -19,6 +19,7 @@ type Props = {
   reserve: bigint;
   paymentToken: Address;
   paymentDecimals: number;
+  onCommitted?: () => void;
 };
 
 type Step =
@@ -35,6 +36,7 @@ export function CommitForm({
   reserve,
   paymentToken,
   paymentDecimals,
+  onCommitted,
 }: Props) {
   const { address } = useWallet();
   const [bid, setBid] = useState("5000");
@@ -43,6 +45,10 @@ export function CommitForm({
   const [log, setLog] = useState<string>("");
   const [allowance, setAllowance] = useState<bigint | null>(null);
   const [kycOk, setKycOk] = useState<boolean | null>(null);
+  // Re-entry lock: React state transitions are async, so disabled={working}
+  // does not block a second click in the same frame. A ref flips
+  // synchronously and is checked at the very top of onCommit.
+  const inFlight = useRef(false);
 
   useEffect(() => {
     if (!address) return;
@@ -59,6 +65,8 @@ export function CommitForm({
 
   async function onCommit() {
     if (!address) return;
+    if (inFlight.current) return;
+    inFlight.current = true;
     setLog("");
     setStep("idle");
 
@@ -132,12 +140,15 @@ export function CommitForm({
       const hash = await commitBid(auctionId, escrowBig, commitment, proof);
       setLog((l) => l + `commitBid tx: ${hash}\n`);
       setStep("done");
+      onCommitted?.();
     } catch (err) {
       setLog(
         (l) =>
           l + `error: ${err instanceof Error ? err.message : String(err)}\n`,
       );
       setStep("error");
+    } finally {
+      inFlight.current = false;
     }
   }
 
