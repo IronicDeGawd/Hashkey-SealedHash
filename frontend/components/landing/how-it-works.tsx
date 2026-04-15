@@ -47,10 +47,8 @@ export function HowItWorks() {
   const [open, setOpen] = useState<number>(0);
 
   return (
-    <section
-      id="how-it-works"
-      className="mx-auto max-w-[1440px] px-5 py-16 md:px-16 md:py-20"
-    >
+    <section id="how-it-works" className="w-full bg-white">
+      <div className="mx-auto max-w-[1440px] px-5 py-16 md:px-16 md:py-20">
       <div className="mb-14 flex items-start gap-10">
         <div className="flex flex-col gap-5">
           <span className="inline-block w-fit rounded-[7px] bg-[#B9FF66] px-[7px] py-[5px] text-xl font-medium text-[#191A23]">
@@ -100,6 +98,7 @@ export function HowItWorks() {
             </div>
           );
         })}
+      </div>
       </div>
     </section>
   );

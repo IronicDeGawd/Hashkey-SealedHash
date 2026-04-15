@@ -77,7 +77,8 @@ const features: FeatureCardProps[] = [
 
 export function WhyItMatters() {
   return (
-    <section className="mx-auto max-w-[1440px] px-5 py-16 md:px-16 md:py-20">
+    <section className="w-full bg-white">
+      <div className="mx-auto max-w-[1440px] px-5 py-16 md:px-16 md:py-20">
       <div className="mb-14 flex items-start gap-10">
         <SectionHeading
           label="What you get"
@@ -89,6 +90,7 @@ export function WhyItMatters() {
         {features.map((f) => (
           <FeatureCard key={f.title} {...f} />
         ))}
+      </div>
       </div>
     </section>
   );

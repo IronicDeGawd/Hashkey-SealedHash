@@ -23,7 +23,8 @@ const entries = [
 
 export function LiveOnTestnet() {
   return (
-    <section className="mx-auto max-w-[1440px] px-5 py-10 md:px-16">
+    <section className="w-full bg-white">
+      <div className="mx-auto max-w-[1440px] px-5 py-10 md:px-16">
       <div className="mb-14 flex items-start gap-10">
         <div className="flex flex-col gap-5">
           <span className="inline-block w-fit rounded-[7px] bg-[#B9FF66] px-[7px] py-[5px] text-xl font-medium text-[#191A23]">
@@ -96,6 +97,7 @@ export function LiveOnTestnet() {
           </span>
         </a>
         <span className="text-sm text-[#191A23]/60">chainId 133</span>
+      </div>
       </div>
     </section>
   );

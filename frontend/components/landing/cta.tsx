@@ -2,7 +2,8 @@ import { LinkButton } from "@/components/ui/button";
 
 export function LandingCta() {
   return (
-    <section className="mx-auto max-w-[1440px] px-5 py-10 md:px-16">
+    <section className="w-full bg-white">
+      <div className="mx-auto max-w-[1440px] px-5 py-10 md:px-16">
       <div className="flex flex-col items-start justify-between gap-10 rounded-[45px] bg-[#F3F3F3] px-8 py-12 md:flex-row md:items-center md:px-16 md:py-14">
         {/* Left */}
         <div className="flex max-w-[500px] flex-col gap-6">
@@ -92,6 +93,7 @@ export function LandingCta() {
             />
           </svg>
         </div>
+      </div>
       </div>
     </section>
   );
