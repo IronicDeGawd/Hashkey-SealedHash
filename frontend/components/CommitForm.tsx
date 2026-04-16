@@ -160,14 +160,17 @@ export function CommitForm({
     step === "committing" ||
     step === "approve" ||
     step === "kyc";
+  const done = step === "done";
 
-  const buttonLabel = working
-    ? `working · ${step}…`
-    : needsKyc
-      ? "Self-KYC + approve + prove + commit"
-      : needsApproval
-        ? "Approve + prove + commit"
-        : "Generate proof + commit";
+  const buttonLabel = done
+    ? "Committed · awaiting reveal"
+    : working
+      ? `working · ${step}…`
+      : needsKyc
+        ? "Self-KYC + approve + prove + commit"
+        : needsApproval
+          ? "Approve + prove + commit"
+          : "Generate proof + commit";
 
   return (
     <div className="flex flex-col gap-8">
@@ -202,7 +205,7 @@ export function CommitForm({
           variant="tertiary"
           size="default"
           onClick={onCommit}
-          disabled={working}
+          disabled={working || done}
         >
           {buttonLabel}
         </Button>
